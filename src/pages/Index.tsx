@@ -3,20 +3,14 @@ import React from 'react';
 import { Star, Heart, Clock, ArrowRight } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Link } from 'react-router-dom';
+import Navigation from '@/components/Navigation';
 
 const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-purple-dark via-purple to-purple-light text-white">
       {/* Navigation */}
-      <nav className="container mx-auto py-6 px-4 flex justify-between items-center">
-        <h1 className="text-2xl font-bold">AstroMatch</h1>
-        <div className="flex gap-6">
-          <a href="#" className="hover:text-orange transition-colors">Home</a>
-          <a href="#" className="hover:text-orange transition-colors">Match</a>
-          <a href="#" className="hover:text-orange transition-colors">Chat</a>
-          <a href="#" className="hover:text-orange transition-colors">Profile</a>
-        </div>
-      </nav>
+      <Navigation />
 
       {/* Hero Section */}
       <div className="container mx-auto px-4 py-16 text-center">
@@ -44,12 +38,14 @@ const Index = () => {
             <p className="text-sm opacity-75">Get personalized insights and advice from our AI astrological assistant</p>
           </Card>
         </div>
-        <Button 
-          className="bg-orange hover:bg-orange-dark text-white px-8 py-6 rounded-full text-lg font-semibold animate-fade-up"
-          style={{ animationDelay: "0.6s" }}
-        >
-          Start Matching <ArrowRight className="ml-2" />
-        </Button>
+        <Link to="/match">
+          <Button 
+            className="bg-orange hover:bg-orange-dark text-white px-8 py-6 rounded-full text-lg font-semibold animate-fade-up"
+            style={{ animationDelay: "0.6s" }}
+          >
+            Start Matching <ArrowRight className="ml-2" />
+          </Button>
+        </Link>
 
         {/* Stats */}
         <div className="grid md:grid-cols-3 gap-8 mt-24">
