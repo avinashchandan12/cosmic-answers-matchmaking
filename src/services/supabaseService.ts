@@ -83,7 +83,7 @@ export const saveMatch = async (match: Partial<Match>): Promise<Match | null> =>
   try {
     const { data, error } = await supabase
       .from('matches')
-      .insert([match])
+      .insert(match)  // Fixed: removed array brackets
       .select()
       .single();
       
@@ -164,7 +164,7 @@ export const saveChatMessage = async (message: Partial<ChatMessage>): Promise<Ch
   try {
     const { data, error } = await supabase
       .from('chat_messages')
-      .insert([message])
+      .insert(message)  // Fixed: removed array brackets
       .select()
       .single();
       

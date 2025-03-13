@@ -14,38 +14,6 @@ interface Message {
   timestamp: Date;
 }
 
-// Sample pre-defined responses based on keywords
-const sampleResponses: Record<string, string[]> = {
-  'compatibility': [
-    "Based on your birth charts, your compatibility is quite strong. Venus in your chart connects well with your partner's Jupiter, indicating growth and prosperity in the relationship.",
-    "Your Moon signs are in harmony, suggesting emotional compatibility and understanding between you two."
-  ],
-  'marriage': [
-    "The 7th house in both charts shows positive indications for marriage. The timing looks favorable around your Saturn return.",
-    "Your Navamsa charts show a strong connection, which is very important for marital happiness according to Vedic astrology."
-  ],
-  'career': [
-    "Your 10th house is strong with Sun and Jupiter aspects, indicating leadership roles and success in your profession.",
-    "The current planetary period (dasha) is favorable for career growth over the next 2-3 years."
-  ],
-  'mangal': [
-    "The Mangal Dosha in your chart is neutralized by the placement of Venus in the 7th house.",
-    "While there is Mangal Dosha, it's not affecting your relationship compatibility significantly due to other harmonious aspects."
-  ],
-  'dasha': [
-    "You're currently running Venus-Mercury dasha which is favorable for relationships and communication.",
-    "Your partner is in Saturn mahadasha, which can bring stability but also some responsibilities in the relationship."
-  ]
-};
-
-// Default responses when no keywords match
-const defaultResponses = [
-  "According to your birth charts, the planetary positions indicate a period of growth and transformation.",
-  "The current transit of Jupiter will bring positive energy to your relationship over the next few months.",
-  "Based on Vedic principles, your Moon signs suggest a natural emotional understanding between you two.",
-  "Your ascendants are compatible, creating a strong foundation for your relationship."
-];
-
 const Chat = () => {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
@@ -110,13 +78,11 @@ const Chat = () => {
     try {
       const { error } = await supabase
         .from('chat_messages')
-        .insert([
-          {
-            user_id: user.id,
-            message,
-            is_from_ai: isFromAI
-          }
-        ]);
+        .insert({
+          user_id: user.id,
+          message,
+          is_from_ai: isFromAI
+        });
         
       if (error) {
         console.error('Error saving message:', error);
@@ -146,49 +112,37 @@ const Chat = () => {
     
     setInput('');
     
-    // Simulate AI response with a slight delay
-    setTimeout(async () => {
-      try {
-        // Check for keywords in the user's message
-        const lowercaseInput = input.toLowerCase();
-        let responseText = '';
-        
-        // Find matching keywords
-        const matchedKeyword = Object.keys(sampleResponses).find(keyword => 
-          lowercaseInput.includes(keyword)
-        );
-        
-        if (matchedKeyword) {
-          // Get a random response for the matched keyword
-          const responses = sampleResponses[matchedKeyword];
-          responseText = responses[Math.floor(Math.random() * responses.length)];
-        } else {
-          // Use default response if no keywords match
-          responseText = defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
-        }
-        
-        const aiMessage: Message = {
-          id: Date.now().toString(),
-          text: responseText,
-          sender: 'ai',
-          timestamp: new Date()
-        };
-        
-        setMessages(prev => [...prev, aiMessage]);
-        
-        // Save AI response to Supabase
-        await saveMessage(responseText, true);
-      } catch (error) {
-        console.error('Error generating response:', error);
-        toast({
-          title: "Error",
-          description: "Failed to generate a response. Please try again.",
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
-      }
-    }, 1000);
+    try {
+      // Call our Supabase Edge Function
+      const { data, error } = await supabase.functions.invoke('chat-ai', {
+        body: { prompt: input }
+      });
+      
+      if (error) throw error;
+      
+      const aiResponse = data.response;
+      
+      const aiMessage: Message = {
+        id: Date.now().toString(),
+        text: aiResponse,
+        sender: 'ai',
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, aiMessage]);
+      
+      // Save AI response to Supabase
+      await saveMessage(aiResponse, true);
+    } catch (error) {
+      console.error('Error calling AI function:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate a response. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

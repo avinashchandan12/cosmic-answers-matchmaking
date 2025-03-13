@@ -1,24 +1,32 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --purple-dark: #1e1137;
+  --purple: #2a1745;
+  --purple-light: #3c2057;
+  --orange: #FF9D4C;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+body {
+  font-family: 'Inter', sans-serif;
+  @apply bg-gradient-to-b from-purple-dark via-purple to-purple-light min-h-screen;
 }
 
-@keyframes logo-spin {
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.75rem;
+}
+
+.animate-spin {
+  animation: spin 1.5s linear infinite;
+}
+
+@keyframes spin {
   from {
     transform: rotate(0deg);
   }
@@ -27,16 +35,38 @@
   }
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.text-orange {
+  color: var(--orange);
 }
 
-.card {
-  padding: 2em;
+.bg-orange {
+  background-color: var(--orange);
 }
 
-.read-the-docs {
-  color: #888;
+.from-purple-dark {
+  --tw-gradient-from: var(--purple-dark);
+}
+
+.via-purple {
+  --tw-gradient-via: var(--purple);
+}
+
+.to-purple-light {
+  --tw-gradient-to: var(--purple-light);
+}
+
+.hover\:bg-orange\/90:hover {
+  background-color: rgba(255, 157, 76, 0.9);
+}
+
+.focus\:ring-orange:focus {
+  --tw-ring-color: var(--orange);
+}
+
+.zodiac-bg {
+  background-image: url('/assets/zodiac-symbols.svg');
+  background-repeat: repeat;
+  background-size: 300px;
+  background-blend-mode: soft-light;
+  background-opacity: 0.1;
 }
