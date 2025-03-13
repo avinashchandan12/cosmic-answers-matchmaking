@@ -60,7 +60,7 @@ const Index = () => {
         
         {/* CTA Section */}
         <div className="text-center mb-16">
-          <Link to={user ? "/match" : "/auth"}>
+          <Link to="/match">
             <Button 
               size="lg" 
               className="bg-purple-light hover:bg-purple-light/90 text-white px-8 py-6 rounded-lg text-lg h-auto"
@@ -68,6 +68,11 @@ const Index = () => {
               Start Matching <ArrowRight className="ml-2" />
             </Button>
           </Link>
+          {!user && (
+            <p className="mt-4 text-white/70">
+              <Link to="/auth" className="text-orange hover:underline">Sign in</Link> to save your matches and charts
+            </p>
+          )}
         </div>
         
         {/* Footer */}
