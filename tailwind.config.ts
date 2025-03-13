@@ -20,10 +20,12 @@ export default {
     },
     extend: {
       colors: {
-        "purple-dark": "#1e1137",
-        "purple": "#2a1745",
-        "purple-light": "#3c2057",
-        "orange": "#FF9D4C",
+        "purple-dark": "#1A1F2C", // Darker purple from the image
+        "purple": "#2A1745", // Original purple
+        "purple-background": "#1e1137", // Background purple from the image
+        "purple-light": "#6E59A5", // Tertiary Purple from suggestions
+        "orange": "#FF7D54", // Orange from the image
+        "soft-purple": "#E5DEFF", // Soft Purple from suggestions
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

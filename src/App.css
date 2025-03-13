@@ -4,15 +4,16 @@
 @tailwind utilities;
 
 :root {
-  --purple-dark: #1e1137;
-  --purple: #2a1745;
-  --purple-light: #3c2057;
-  --orange: #FF9D4C;
+  --purple-dark: #1A1F2C;
+  --purple: #2A1745;
+  --purple-background: #1e1137;
+  --purple-light: #6E59A5;
+  --orange: #FF7D54;
 }
 
 body {
   font-family: 'Inter', sans-serif;
-  @apply bg-gradient-to-b from-purple-dark via-purple to-purple-light min-h-screen;
+  @apply bg-purple-background min-h-screen text-white;
 }
 
 .glass-card {
@@ -43,30 +44,10 @@ body {
   background-color: var(--orange);
 }
 
-.from-purple-dark {
-  --tw-gradient-from: var(--purple-dark);
-}
-
-.via-purple {
-  --tw-gradient-via: var(--purple);
-}
-
-.to-purple-light {
-  --tw-gradient-to: var(--purple-light);
-}
-
 .hover\:bg-orange\/90:hover {
-  background-color: rgba(255, 157, 76, 0.9);
+  background-color: rgba(255, 125, 84, 0.9);
 }
 
 .focus\:ring-orange:focus {
   --tw-ring-color: var(--orange);
-}
-
-.zodiac-bg {
-  background-image: url('/assets/zodiac-symbols.svg');
-  background-repeat: repeat;
-  background-size: 300px;
-  background-blend-mode: soft-light;
-  background-opacity: 0.1;
 }

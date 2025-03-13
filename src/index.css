@@ -33,10 +33,24 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-purple-background text-foreground antialiased;
   }
 }
 
 .glass-card {
-  @apply backdrop-blur-lg bg-white/10 border border-white/20;
+  @apply backdrop-blur-lg bg-white/5 border border-white/20 rounded-lg;
+}
+
+.feature-icon {
+  @apply w-16 h-16 rounded-full flex items-center justify-center mx-auto;
+  background-color: rgba(255, 125, 84, 0.2); /* Translucent orange */
+}
+
+.nav-active {
+  @apply relative;
+}
+
+.nav-active::after {
+  content: '';
+  @apply absolute bottom-0 left-0 w-full h-0.5 bg-orange;
 }

@@ -35,7 +35,7 @@ const AstrologyData = () => {
       <div className="mt-6">
         <Button 
           onClick={() => navigate('/chat')}
-          className="bg-orange hover:bg-orange/90"
+          className="bg-purple-light hover:bg-purple-light/90 text-white"
         >
           Ask About Your Chart
         </Button>
