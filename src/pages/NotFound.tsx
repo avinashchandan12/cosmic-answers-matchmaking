@@ -16,7 +16,7 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-dark via-purple to-purple-light flex flex-col items-center justify-center px-4">
+    <div className="min-h-screen bg-purple-background text-white flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
           <div className="bg-white/10 p-4 rounded-full mb-4">
@@ -53,3 +53,4 @@ const NotFound = () => {
 };
 
 export default NotFound;
+

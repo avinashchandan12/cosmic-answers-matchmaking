@@ -63,7 +63,7 @@ const Index = () => {
           <Link to="/match">
             <Button 
               size="lg" 
-              className="bg-purple-light hover:bg-purple-light/90 text-white px-8 py-6 rounded-lg text-lg h-auto"
+              className="bg-orange hover:bg-orange/90 text-white px-8 py-6 rounded-lg text-lg h-auto"
             >
               Start Matching <ArrowRight className="ml-2" />
             </Button>
@@ -86,3 +86,4 @@ const Index = () => {
 };
 
 export default Index;
+

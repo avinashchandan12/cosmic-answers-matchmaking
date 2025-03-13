@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { ArrowRight, ArrowLeft, Calendar, Clock, Save, Star } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -101,10 +100,12 @@ const Match = () => {
   const renderPersonalInfo = () => {
     return (
       <div className="space-y-6">
-        <h2 className="text-2xl font-semibold text-center mb-6">Enter First Person's Details</h2>
+        <h2 className="text-2xl font-semibold text-center mb-6 text-white">
+          Enter First Person's Details
+        </h2>
         
         <div className="space-y-2">
-          <Label htmlFor="name">Full Name</Label>
+          <Label htmlFor="name" className="text-white">Full Name</Label>
           <Input
             id="name"
             name="name"
@@ -327,7 +328,7 @@ const Match = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-dark via-purple to-purple-light text-white">
+    <div className="min-h-screen bg-purple-background text-white">
       <Navigation />
       
       <div className="container mx-auto px-4 py-10">
@@ -346,7 +347,7 @@ const Match = () => {
 
           {renderStepIndicator()}
           
-          <Card className="w-full bg-white/5 backdrop-blur-lg border-white/20 animate-fade-up">
+          <Card className="w-full bg-white/5 backdrop-blur-lg border-white/20">
             <CardContent className="p-6 pt-6">
               <Tabs value={String(currentStep)} className="w-full">
                 <TabsContent value="1">

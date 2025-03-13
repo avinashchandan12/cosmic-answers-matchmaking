@@ -5,7 +5,7 @@
 
 :root {
   --purple-dark: #1A1F2C;
-  --purple: #2A1745;
+  --purple: #1e1137;
   --purple-background: #1e1137;
   --purple-light: #6E59A5;
   --orange: #FF7D54;
@@ -51,3 +51,4 @@ body {
 .focus\:ring-orange:focus {
   --tw-ring-color: var(--orange);
 }
+
