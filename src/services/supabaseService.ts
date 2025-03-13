@@ -93,7 +93,18 @@ export const updateProfile = async (profile: Partial<Profile> & { id: string }):
 };
 
 // Match operations
-export const saveMatch = async (match: Partial<Match>): Promise<Match | null> => {
+export const saveMatch = async (match: { 
+  user_id: string; 
+  partner_name: string; 
+  partner_birth_date?: string;
+  partner_birth_time?: string;
+  partner_birth_place?: string;
+  partner_birth_place_lat?: number | null;
+  partner_birth_place_lng?: number | null;
+  compatibility_score?: number;
+  created_at?: string;
+  id?: string;
+}): Promise<Match | null> => {
   try {
     const { data, error } = await supabase
       .from('matches')
@@ -174,7 +185,13 @@ export const getChatMessages = async (userId: string): Promise<ChatMessage[]> =>
   }
 };
 
-export const saveChatMessage = async (message: Partial<ChatMessage>): Promise<ChatMessage | null> => {
+export const saveChatMessage = async (message: {
+  user_id: string;
+  message: string;
+  is_from_ai?: boolean;
+  created_at?: string;
+  id?: string;
+}): Promise<ChatMessage | null> => {
   try {
     const { data, error } = await supabase
       .from('chat_messages')
