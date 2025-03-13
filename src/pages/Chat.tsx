@@ -1,12 +1,14 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MessageCircle, Send, User, Star } from 'lucide-react';
+import { MessageCircle, Send, User, Star, Loader2 } from 'lucide-react';
 import Navigation from '@/components/Navigation';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from '@/hooks/use-toast';
 
 interface Message {
-  id: number;
+  id: string;
   text: string;
   sender: 'user' | 'ai';
   timestamp: Date;
@@ -45,67 +47,147 @@ const defaultResponses = [
 ];
 
 const Chat = () => {
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: 1,
+      id: '1',
       text: "Hello! I'm your AstroMatch AI assistant. How can I help you with your astrological chart or relationship compatibility questions?",
       sender: 'ai',
       timestamp: new Date()
     }
   ]);
   const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  // Fetch previous chat messages from Supabase
+  useEffect(() => {
+    const fetchChatHistory = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('chat_messages')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: true });
+          
+        if (error) {
+          console.error('Error fetching chat history:', error);
+          return;
+        }
+        
+        if (data && data.length > 0) {
+          const formattedMessages: Message[] = data.map(msg => ({
+            id: msg.id,
+            text: msg.message,
+            sender: msg.is_from_ai ? 'ai' : 'user',
+            timestamp: new Date(msg.created_at)
+          }));
+          
+          // Keep the welcome message at the top
+          setMessages([messages[0], ...formattedMessages]);
+        }
+      } catch (error) {
+        console.error('Error fetching chat history:', error);
+      }
+    };
+    
+    fetchChatHistory();
+  }, [user]);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = () => {
-    if (input.trim() === '') return;
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const saveMessage = async (message: string, isFromAI: boolean) => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('chat_messages')
+        .insert([
+          {
+            user_id: user.id,
+            message,
+            is_from_ai: isFromAI
+          }
+        ]);
+        
+      if (error) {
+        console.error('Error saving message:', error);
+      }
+    } catch (error) {
+      console.error('Error saving message:', error);
+    }
+  };
+
+  const handleSend = async () => {
+    if (input.trim() === '' || loading) return;
+    
+    setLoading(true);
     
     // Add user message
     const userMessage: Message = {
-      id: messages.length + 1,
+      id: Date.now().toString(),
       text: input,
       sender: 'user',
       timestamp: new Date()
     };
     
     setMessages(prev => [...prev, userMessage]);
+    
+    // Save user message to Supabase
+    await saveMessage(input, false);
+    
     setInput('');
     
     // Simulate AI response with a slight delay
-    setTimeout(() => {
-      // Check for keywords in the user's message
-      const lowercaseInput = input.toLowerCase();
-      let responseText = '';
-      
-      // Find matching keywords
-      const matchedKeyword = Object.keys(sampleResponses).find(keyword => 
-        lowercaseInput.includes(keyword)
-      );
-      
-      if (matchedKeyword) {
-        // Get a random response for the matched keyword
-        const responses = sampleResponses[matchedKeyword];
-        responseText = responses[Math.floor(Math.random() * responses.length)];
-      } else {
-        // Use default response if no keywords match
-        responseText = defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+    setTimeout(async () => {
+      try {
+        // Check for keywords in the user's message
+        const lowercaseInput = input.toLowerCase();
+        let responseText = '';
+        
+        // Find matching keywords
+        const matchedKeyword = Object.keys(sampleResponses).find(keyword => 
+          lowercaseInput.includes(keyword)
+        );
+        
+        if (matchedKeyword) {
+          // Get a random response for the matched keyword
+          const responses = sampleResponses[matchedKeyword];
+          responseText = responses[Math.floor(Math.random() * responses.length)];
+        } else {
+          // Use default response if no keywords match
+          responseText = defaultResponses[Math.floor(Math.random() * defaultResponses.length)];
+        }
+        
+        const aiMessage: Message = {
+          id: Date.now().toString(),
+          text: responseText,
+          sender: 'ai',
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => [...prev, aiMessage]);
+        
+        // Save AI response to Supabase
+        await saveMessage(responseText, true);
+      } catch (error) {
+        console.error('Error generating response:', error);
+        toast({
+          title: "Error",
+          description: "Failed to generate a response. Please try again.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
       }
-      
-      const aiMessage: Message = {
-        id: messages.length + 2,
-        text: responseText,
-        sender: 'ai',
-        timestamp: new Date()
-      };
-      
-      setMessages(prev => [...prev, aiMessage]);
     }, 1000);
   };
 
@@ -130,7 +212,7 @@ const Chat = () => {
             Astrological Consultation
           </h1>
           
-          <Card className="glass-card p-4 h-[70vh] flex flex-col">
+          <Card className="glass-card p-4 h-[70vh] flex flex-col bg-white/5 backdrop-blur-lg border-white/20">
             <div className="flex items-center mb-4 pb-4 border-b border-white/10">
               <div className="w-10 h-10 rounded-full bg-orange flex items-center justify-center mr-3">
                 <Star className="text-white" size={20} />
@@ -179,13 +261,14 @@ const Chat = () => {
                 placeholder="Ask about your relationship compatibility..."
                 className="w-full p-4 pr-14 rounded-xl bg-white/5 border border-white/20 focus:outline-none focus:ring-2 focus:ring-orange resize-none"
                 rows={2}
+                disabled={loading}
               />
               <Button 
                 onClick={handleSend}
-                className="absolute right-2 bottom-2 p-2 bg-orange hover:bg-orange-dark text-white rounded-lg"
-                disabled={input.trim() === ''}
+                className="absolute right-2 bottom-2 p-2 bg-orange hover:bg-orange/90 text-white rounded-lg"
+                disabled={input.trim() === '' || loading}
               >
-                <Send size={20} />
+                {loading ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
               </Button>
             </div>
           </Card>
@@ -204,6 +287,7 @@ const Chat = () => {
                   key={index}
                   className="bg-white/10 hover:bg-white/20 text-white"
                   onClick={() => setInput(question)}
+                  disabled={loading}
                 >
                   <MessageCircle className="mr-2" size={16} />
                   {question}

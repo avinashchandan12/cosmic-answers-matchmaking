@@ -1,0 +1,57 @@
+
+<svg width="1200" height="120" viewBox="0 0 1200 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Aries -->
+  <path d="M100 30C100 30 120 60 140 60C160 60 180 30 180 30" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M140 60V90" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Taurus -->
+  <path d="M220 30C220 30 240 50 260 50C280 50 300 30 300 30" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M230 60H290" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M260 50V90" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Gemini -->
+  <path d="M340 30V90" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M380 30V90" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M340 45H380" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M340 75H380" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Cancer -->
+  <circle cx="440" cy="60" r="20" stroke="white" stroke-width="3"/>
+  <path d="M440 40C450 30 470 40 460 60" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Leo -->
+  <circle cx="520" cy="50" r="15" stroke="white" stroke-width="3"/>
+  <path d="M520 65C520 65 530 80 520 90C510 100 500 90 500 90" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Virgo -->
+  <path d="M580 40C580 40 590 30 600 40C610 50 590 70 600 80C610 90 620 80 620 80" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M595 55L585 90" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Libra -->
+  <path d="M660 40H700" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M670 60H690" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M680 60V90" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Scorpio -->
+  <path d="M740 60H770" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M770 60C770 60 780 60 780 70C780 80 770 80 770 80" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M770 80L760 90" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M760 90L770 100" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Sagittarius -->
+  <path d="M820 40L860 80" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M860 40L820 80" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M840 60L840 90" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Capricorn -->
+  <path d="M900 40C900 40 910 30 920 40C930 50 910 70 920 80C930 90 940 80 940 80" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M915 55C915 55 905 70 915 90" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Aquarius -->
+  <path d="M980 50C980 50 990 40 1000 50C1010 60 990 80 1000 90C1010 100 1020 90 1020 90" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  <path d="M980 70C980 70 990 60 1000 70C1010 80 990 100 1000 110C1010 120 1020 110 1020 110" stroke="white" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- Pisces -->
+  <path d="M1060 50C1070 40 1090 40 1100 50C1110 60 1110 80 1100 90C1090 100 1070 100 1060 90C1050 80 1050 60 1060 50Z" stroke="white" stroke-width="3"/>
+  <path d="M1060 70H1100" stroke="white" stroke-width="3" stroke-linecap="round"/>
+</svg>
