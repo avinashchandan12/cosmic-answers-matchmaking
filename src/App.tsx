@@ -20,6 +20,7 @@ function App() {
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<Index />} />
           <Route path="/match" element={<Match />} />
+          <Route path="/results" element={<Results />} />
           <Route 
             path="/profile" 
             element={

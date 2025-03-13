@@ -2,13 +2,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { ArrowRight, ArrowLeft, Calendar, Clock, Save } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowRight, ArrowLeft, Calendar, Clock, Save, Star } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import Navigation from '@/components/Navigation';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Steps: Personal info, Partner info, Birth details
 const TOTAL_STEPS = 3;
@@ -88,7 +89,7 @@ const Match = () => {
             className={`flex items-center justify-center rounded-full h-12 w-12 text-white font-medium 
               ${currentStep === step 
                 ? 'bg-orange' 
-                : 'bg-gray-500 bg-opacity-50'}`}
+                : 'bg-white/10'}`}
           >
             {step}
           </div>
@@ -110,7 +111,7 @@ const Match = () => {
             value={formData.name}
             onChange={handleInputChange}
             placeholder="Enter full name"
-            className="bg-white/5 border-white/20 text-white placeholder:text-gray-400"
+            className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
           />
         </div>
 
@@ -146,7 +147,7 @@ const Match = () => {
               type="date"
               value={formData.birthDate}
               onChange={handleInputChange}
-              className="pl-10 bg-white/5 border-white/20 text-white"
+              className="pl-10 bg-white/10 border-white/20 text-white"
             />
           </div>
         </div>
@@ -161,7 +162,7 @@ const Match = () => {
               type="time"
               value={formData.birthTime}
               onChange={handleInputChange}
-              className="pl-10 bg-white/5 border-white/20 text-white"
+              className="pl-10 bg-white/10 border-white/20 text-white"
             />
           </div>
         </div>
@@ -174,7 +175,7 @@ const Match = () => {
             value={formData.birthPlace}
             onChange={handleInputChange}
             placeholder="City, State, Country"
-            className="bg-white/5 border-white/20 text-white placeholder:text-gray-400"
+            className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
           />
         </div>
 
@@ -202,7 +203,7 @@ const Match = () => {
             value={formData.partnerName}
             onChange={handleInputChange}
             placeholder="Enter full name"
-            className="bg-white/5 border-white/20 text-white placeholder:text-gray-400"
+            className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
           />
         </div>
 
@@ -238,7 +239,7 @@ const Match = () => {
               type="date"
               value={formData.partnerBirthDate}
               onChange={handleInputChange}
-              className="pl-10 bg-white/5 border-white/20 text-white"
+              className="pl-10 bg-white/10 border-white/20 text-white"
             />
           </div>
         </div>
@@ -253,7 +254,7 @@ const Match = () => {
               type="time"
               value={formData.partnerBirthTime}
               onChange={handleInputChange}
-              className="pl-10 bg-white/5 border-white/20 text-white"
+              className="pl-10 bg-white/10 border-white/20 text-white"
             />
           </div>
         </div>
@@ -266,7 +267,7 @@ const Match = () => {
             value={formData.partnerBirthPlace}
             onChange={handleInputChange}
             placeholder="City, State, Country"
-            className="bg-white/5 border-white/20 text-white placeholder:text-gray-400"
+            className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
           />
         </div>
       </div>
@@ -326,42 +327,57 @@ const Match = () => {
   };
 
   return (
-    <div className="min-h-screen bg-purple-dark text-white">
+    <div className="min-h-screen bg-gradient-to-b from-purple-dark via-purple to-purple-light text-white">
       <Navigation />
       
       <div className="container mx-auto px-4 py-10">
         <div className="max-w-2xl mx-auto">
-          <h1 className="text-3xl md:text-4xl font-bold mb-4 text-center">
-            Vedic Compatibility Match
-          </h1>
-          <p className="text-center mb-8 opacity-80">
-            Enter birth details to discover your cosmic compatibility
-          </p>
+          <div className="flex flex-col items-center mb-8">
+            <div className="bg-white/10 p-3 rounded-full mb-4">
+              <Star className="h-8 w-8 text-orange" />
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold text-white text-center">
+              Vedic Compatibility Match
+            </h1>
+            <p className="text-white/70 mt-2 text-center">
+              Enter birth details to discover your cosmic compatibility
+            </p>
+          </div>
 
           {renderStepIndicator()}
           
-          <Card className="p-6 bg-white/5 backdrop-blur-lg border-white/20 animate-fade-up">
-            {currentStep === 1 && renderPersonalInfo()}
-            {currentStep === 2 && renderPartnerInfo()}
-            {currentStep === 3 && renderChartOptions()}
+          <Card className="w-full bg-white/5 backdrop-blur-lg border-white/20 animate-fade-up">
+            <CardContent className="p-6 pt-6">
+              <Tabs value={String(currentStep)} className="w-full">
+                <TabsContent value="1">
+                  {renderPersonalInfo()}
+                </TabsContent>
+                <TabsContent value="2">
+                  {renderPartnerInfo()}
+                </TabsContent>
+                <TabsContent value="3">
+                  {renderChartOptions()}
+                </TabsContent>
+              </Tabs>
 
-            <div className="mt-8 flex justify-between">
-              <Button 
-                onClick={prevStep}
-                className="bg-white/10 hover:bg-white/20 text-white"
-              >
-                <ArrowLeft className="mr-2" size={18} />
-                Back
-              </Button>
-              
-              <Button 
-                onClick={nextStep}
-                className="bg-orange hover:bg-orange/90 text-white"
-              >
-                {currentStep === TOTAL_STEPS ? 'See Results' : 'Next'}
-                <ArrowRight className="ml-2" size={18} />
-              </Button>
-            </div>
+              <div className="mt-8 flex justify-between">
+                <Button 
+                  onClick={prevStep}
+                  className="bg-white/10 hover:bg-white/20 text-white"
+                >
+                  <ArrowLeft className="mr-2" size={18} />
+                  Back
+                </Button>
+                
+                <Button 
+                  onClick={nextStep}
+                  className="bg-orange hover:bg-orange/90 text-white"
+                >
+                  {currentStep === TOTAL_STEPS ? 'See Results' : 'Next'}
+                  <ArrowRight className="ml-2" size={18} />
+                </Button>
+              </div>
+            </CardContent>
           </Card>
         </div>
       </div>
