@@ -87,7 +87,7 @@ const Profile = () => {
 
   if (loading && !profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-dark via-purple to-purple-light flex items-center justify-center">
+      <div className="min-h-screen bg-purple-background flex items-center justify-center">
         <div className="animate-spin text-orange">
           <svg className="h-12 w-12" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -99,26 +99,26 @@ const Profile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-dark via-purple to-purple-light text-white">
+    <div className="min-h-screen bg-purple-background text-white">
       <Navigation />
       
       <div className="container mx-auto px-4 py-10">
         <div className="max-w-4xl mx-auto">
           <ProfileHeader />
 
-          <h1 className="text-3xl md:text-4xl font-bold mb-6">Your Profile</h1>
+          <h1 className="text-3xl md:text-4xl font-bold mb-6 text-white">Your Profile</h1>
           
           <Tabs defaultValue="profile" className="w-full">
             <TabsList className="grid w-full grid-cols-3 bg-white/10 border-white/20">
-              <TabsTrigger value="profile" className="data-[state=active]:bg-orange">
+              <TabsTrigger value="profile" className="data-[state=active]:bg-orange text-white">
                 <UserCircle className="mr-2" size={18} />
                 Profile
               </TabsTrigger>
-              <TabsTrigger value="saved-matches" className="data-[state=active]:bg-orange">
+              <TabsTrigger value="saved-matches" className="data-[state=active]:bg-orange text-white">
                 <Star className="mr-2" size={18} />
                 Saved Matches
               </TabsTrigger>
-              <TabsTrigger value="history" className="data-[state=active]:bg-orange">
+              <TabsTrigger value="history" className="data-[state=active]:bg-orange text-white">
                 <History className="mr-2" size={18} />
                 Match History
               </TabsTrigger>

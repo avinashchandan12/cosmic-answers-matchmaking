@@ -42,7 +42,7 @@ const ProfileForm = ({
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="name">Full Name</Label>
+        <Label htmlFor="name" className="text-white">Full Name</Label>
         <Input
           id="name"
           name="name"
@@ -53,7 +53,7 @@ const ProfileForm = ({
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="gender">Gender</Label>
+        <Label htmlFor="gender" className="text-white">Gender</Label>
         <Input
           id="gender"
           name="gender"
@@ -64,7 +64,7 @@ const ProfileForm = ({
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="birth_date">Birth Date</Label>
+        <Label htmlFor="birth_date" className="text-white">Birth Date</Label>
         <Input
           id="birth_date"
           name="birth_date"
@@ -76,7 +76,7 @@ const ProfileForm = ({
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="birth_time">Birth Time</Label>
+        <Label htmlFor="birth_time" className="text-white">Birth Time</Label>
         <Input
           id="birth_time"
           name="birth_time"
@@ -88,7 +88,7 @@ const ProfileForm = ({
       </div>
       
       <div className="space-y-2">
-        <Label htmlFor="birth_place">Birth Place</Label>
+        <Label htmlFor="birth_place" className="text-white">Birth Place</Label>
         <Input
           id="birth_place"
           name="birth_place"
@@ -122,7 +122,7 @@ const ProfileForm = ({
         <Button 
           onClick={onCancel}
           variant="outline"
-          className="bg-white/10 border-white/20 hover:bg-white/20"
+          className="bg-white/10 border-white/20 hover:bg-white/20 text-white"
         >
           Cancel
         </Button>

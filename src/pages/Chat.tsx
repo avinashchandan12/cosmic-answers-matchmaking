@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -157,12 +158,12 @@ const Chat = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-dark via-purple to-purple-light text-white">
+    <div className="min-h-screen bg-purple-background text-white">
       <Navigation />
       
       <div className="container mx-auto px-4 py-6">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl md:text-4xl font-bold mb-6 text-center">
+          <h1 className="text-3xl md:text-4xl font-bold mb-6 text-center text-white">
             Astrological Consultation
           </h1>
           
@@ -172,7 +173,7 @@ const Chat = () => {
                 <Star className="text-white" size={20} />
               </div>
               <div>
-                <h2 className="font-medium">AstroMatch AI</h2>
+                <h2 className="font-medium text-white">AstroMatch AI</h2>
                 <p className="text-sm text-white/70">Vedic Astrology Specialist</p>
               </div>
             </div>
@@ -199,7 +200,7 @@ const Chat = () => {
                       )}
                       <span className="text-xs opacity-70">{formatTime(message.timestamp)}</span>
                     </div>
-                    <p>{message.text}</p>
+                    <p className="text-white">{message.text}</p>
                   </div>
                 </div>
               ))}
@@ -213,7 +214,7 @@ const Chat = () => {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyPress}
                 placeholder="Ask about your relationship compatibility..."
-                className="w-full p-4 pr-14 rounded-xl bg-white/5 border border-white/20 focus:outline-none focus:ring-2 focus:ring-orange resize-none"
+                className="w-full p-4 pr-14 rounded-xl bg-white/5 border border-white/20 focus:outline-none focus:ring-2 focus:ring-orange resize-none text-white placeholder:text-white/50"
                 rows={2}
                 disabled={loading}
               />
@@ -228,7 +229,7 @@ const Chat = () => {
           </Card>
           
           <div className="mt-8">
-            <h3 className="text-xl font-semibold mb-3">Suggested Questions</h3>
+            <h3 className="text-xl font-semibold mb-3 text-orange">Suggested Questions</h3>
             <div className="flex flex-wrap gap-2">
               {[
                 "What does our compatibility score mean?",

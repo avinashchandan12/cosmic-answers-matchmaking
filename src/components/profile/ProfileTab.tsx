@@ -121,7 +121,7 @@ const ProfileTab = ({ profile, userId, onProfileUpdate }: ProfileTabProps) => {
     <>
       <Card className="p-6 bg-white/5 backdrop-blur-lg border-white/20">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold">Personal Information</h2>
+          <h2 className="text-2xl font-semibold text-orange">Personal Information</h2>
           {!isEditing && (
             <Button 
               onClick={() => setIsEditing(true)}

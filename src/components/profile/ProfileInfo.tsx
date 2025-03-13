@@ -26,20 +26,20 @@ const ProfileInfo = ({ profile }: ProfileInfoProps) => {
       
       <div className="grid md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label className="text-gray-400">Full Name</Label>
-          <p className="text-lg">{profile?.name || 'Not provided'}</p>
+          <Label className="text-white/70">Full Name</Label>
+          <p className="text-lg text-white">{profile?.name || 'Not provided'}</p>
         </div>
         
         <div className="space-y-2">
-          <Label className="text-gray-400">Gender</Label>
-          <p className="text-lg capitalize">{profile?.gender || 'Not provided'}</p>
+          <Label className="text-white/70">Gender</Label>
+          <p className="text-lg capitalize text-white">{profile?.gender || 'Not provided'}</p>
         </div>
       </div>
       
       <div className="grid md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label className="text-gray-400">Birth Date</Label>
-          <p className="text-lg">
+          <Label className="text-white/70">Birth Date</Label>
+          <p className="text-lg text-white">
             {profile?.birth_date ? 
               new Date(profile.birth_date).toLocaleDateString() : 
               'Not provided'}
@@ -47,14 +47,14 @@ const ProfileInfo = ({ profile }: ProfileInfoProps) => {
         </div>
         
         <div className="space-y-2">
-          <Label className="text-gray-400">Birth Time</Label>
-          <p className="text-lg">{profile?.birth_time || 'Not provided'}</p>
+          <Label className="text-white/70">Birth Time</Label>
+          <p className="text-lg text-white">{profile?.birth_time || 'Not provided'}</p>
         </div>
       </div>
       
       <div className="space-y-2">
-        <Label className="text-gray-400">Birth Place</Label>
-        <p className="text-lg">{profile?.birth_place || 'Not provided'}</p>
+        <Label className="text-white/70">Birth Place</Label>
+        <p className="text-lg text-white">{profile?.birth_place || 'Not provided'}</p>
       </div>
     </div>
   );
