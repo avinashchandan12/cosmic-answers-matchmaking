@@ -9,6 +9,8 @@ export interface Profile {
   birth_date: string;
   birth_time: string;
   birth_place: string;
+  birth_place_lat: number | null;
+  birth_place_lng: number | null;
   avatar_url: string;
   created_at: string;
   updated_at: string;
@@ -22,6 +24,8 @@ export interface Match {
   partner_birth_date: string;
   partner_birth_time: string;
   partner_birth_place: string;
+  partner_birth_place_lat: number | null;
+  partner_birth_place_lng: number | null;
   compatibility_score: number;
   created_at: string;
 }
@@ -32,6 +36,16 @@ export interface ChatMessage {
   user_id: string;
   message: string;
   is_from_ai: boolean;
+  created_at: string;
+}
+
+// Saved chart types
+export interface SavedChart {
+  id: string;
+  user_id: string;
+  chart_type: string;
+  chart_data: any;
+  chart_image_url: string | null;
   created_at: string;
 }
 
@@ -83,7 +97,7 @@ export const saveMatch = async (match: Partial<Match>): Promise<Match | null> =>
   try {
     const { data, error } = await supabase
       .from('matches')
-      .insert(match)  // Fixed: removed array brackets
+      .insert(match)
       .select()
       .single();
       
@@ -164,7 +178,7 @@ export const saveChatMessage = async (message: Partial<ChatMessage>): Promise<Ch
   try {
     const { data, error } = await supabase
       .from('chat_messages')
-      .insert(message)  // Fixed: removed array brackets
+      .insert(message)
       .select()
       .single();
       
@@ -177,5 +191,46 @@ export const saveChatMessage = async (message: Partial<ChatMessage>): Promise<Ch
   } catch (error) {
     console.error('Error saving chat message:', error);
     return null;
+  }
+};
+
+// Saved charts operations
+export const saveChart = async (chart: Omit<SavedChart, 'id' | 'created_at'>): Promise<SavedChart | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('saved_charts')
+      .insert(chart)
+      .select()
+      .single();
+      
+    if (error) {
+      console.error('Error saving chart:', error);
+      return null;
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error saving chart:', error);
+    return null;
+  }
+};
+
+export const getSavedCharts = async (userId: string): Promise<SavedChart[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('saved_charts')
+      .select()
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+      
+    if (error) {
+      console.error('Error fetching saved charts:', error);
+      return [];
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Error fetching saved charts:', error);
+    return [];
   }
 };

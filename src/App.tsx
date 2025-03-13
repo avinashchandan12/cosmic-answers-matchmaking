@@ -18,27 +18,13 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/auth" element={<Auth />} />
-          <Route 
-            path="/" 
-            element={
-              <PrivateRoute>
-                <Index />
-              </PrivateRoute>
-            } 
-          />
+          <Route path="/" element={<Index />} />
+          <Route path="/match" element={<Match />} />
           <Route 
             path="/profile" 
             element={
               <PrivateRoute>
                 <Profile />
-              </PrivateRoute>
-            } 
-          />
-          <Route 
-            path="/match" 
-            element={
-              <PrivateRoute>
-                <Match />
               </PrivateRoute>
             } 
           />

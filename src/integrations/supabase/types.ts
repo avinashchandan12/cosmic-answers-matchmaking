@@ -48,6 +48,8 @@ export type Database = {
           id: string
           partner_birth_date: string | null
           partner_birth_place: string | null
+          partner_birth_place_lat: number | null
+          partner_birth_place_lng: number | null
           partner_birth_time: string | null
           partner_name: string
           user_id: string
@@ -58,6 +60,8 @@ export type Database = {
           id?: string
           partner_birth_date?: string | null
           partner_birth_place?: string | null
+          partner_birth_place_lat?: number | null
+          partner_birth_place_lng?: number | null
           partner_birth_time?: string | null
           partner_name: string
           user_id: string
@@ -68,6 +72,8 @@ export type Database = {
           id?: string
           partner_birth_date?: string | null
           partner_birth_place?: string | null
+          partner_birth_place_lat?: number | null
+          partner_birth_place_lng?: number | null
           partner_birth_time?: string | null
           partner_name?: string
           user_id?: string
@@ -87,6 +93,8 @@ export type Database = {
           avatar_url: string | null
           birth_date: string | null
           birth_place: string | null
+          birth_place_lat: number | null
+          birth_place_lng: number | null
           birth_time: string | null
           created_at: string
           gender: string | null
@@ -98,6 +106,8 @@ export type Database = {
           avatar_url?: string | null
           birth_date?: string | null
           birth_place?: string | null
+          birth_place_lat?: number | null
+          birth_place_lng?: number | null
           birth_time?: string | null
           created_at?: string
           gender?: string | null
@@ -109,6 +119,8 @@ export type Database = {
           avatar_url?: string | null
           birth_date?: string | null
           birth_place?: string | null
+          birth_place_lat?: number | null
+          birth_place_lng?: number | null
           birth_time?: string | null
           created_at?: string
           gender?: string | null
@@ -117,6 +129,41 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      saved_charts: {
+        Row: {
+          chart_data: Json
+          chart_image_url: string | null
+          chart_type: string
+          created_at: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          chart_data: Json
+          chart_image_url?: string | null
+          chart_type: string
+          created_at?: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          chart_data?: Json
+          chart_image_url?: string | null
+          chart_type?: string
+          created_at?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_charts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
