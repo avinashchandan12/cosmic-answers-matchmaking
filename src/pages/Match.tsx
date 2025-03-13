@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -100,7 +101,7 @@ const Match = () => {
   const renderPersonalInfo = () => {
     return (
       <div className="space-y-6">
-        <h2 className="text-2xl font-semibold text-center mb-6 text-white">
+        <h2 className="text-2xl font-semibold text-center mb-6 text-orange">
           Enter First Person's Details
         </h2>
         
@@ -117,7 +118,7 @@ const Match = () => {
         </div>
 
         <div className="space-y-2">
-          <Label>Gender</Label>
+          <Label className="text-white">Gender</Label>
           <RadioGroup 
             value={formData.gender} 
             onValueChange={(value) => handleGenderChange(value, 'user')}
@@ -125,21 +126,21 @@ const Match = () => {
           >
             <div className="flex items-center gap-2">
               <RadioGroupItem value="male" id="male" className="text-orange border-white/20" />
-              <Label htmlFor="male">Male</Label>
+              <Label htmlFor="male" className="text-white">Male</Label>
             </div>
             <div className="flex items-center gap-2">
               <RadioGroupItem value="female" id="female" className="text-orange border-white/20" />
-              <Label htmlFor="female">Female</Label>
+              <Label htmlFor="female" className="text-white">Female</Label>
             </div>
             <div className="flex items-center gap-2">
               <RadioGroupItem value="other" id="other" className="text-orange border-white/20" />
-              <Label htmlFor="other">Other</Label>
+              <Label htmlFor="other" className="text-white">Other</Label>
             </div>
           </RadioGroup>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="birthDate">Birth Date</Label>
+          <Label htmlFor="birthDate" className="text-white">Birth Date</Label>
           <div className="relative">
             <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-orange" size={18} />
             <Input
@@ -154,7 +155,7 @@ const Match = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="birthTime">Birth Time</Label>
+          <Label htmlFor="birthTime" className="text-white">Birth Time</Label>
           <div className="relative">
             <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-orange" size={18} />
             <Input
@@ -169,7 +170,7 @@ const Match = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="birthPlace">Birth Place</Label>
+          <Label htmlFor="birthPlace" className="text-white">Birth Place</Label>
           <Input
             id="birthPlace"
             name="birthPlace"
@@ -194,10 +195,10 @@ const Match = () => {
   const renderPartnerInfo = () => {
     return (
       <div className="space-y-6">
-        <h2 className="text-2xl font-semibold text-center mb-6">Enter Second Person's Details</h2>
+        <h2 className="text-2xl font-semibold text-center mb-6 text-orange">Enter Second Person's Details</h2>
         
         <div className="space-y-2">
-          <Label htmlFor="partnerName">Full Name</Label>
+          <Label htmlFor="partnerName" className="text-white">Full Name</Label>
           <Input
             id="partnerName"
             name="partnerName"
@@ -209,7 +210,7 @@ const Match = () => {
         </div>
 
         <div className="space-y-2">
-          <Label>Gender</Label>
+          <Label className="text-white">Gender</Label>
           <RadioGroup 
             value={formData.partnerGender} 
             onValueChange={(value) => handleGenderChange(value, 'partner')}
@@ -217,21 +218,21 @@ const Match = () => {
           >
             <div className="flex items-center gap-2">
               <RadioGroupItem value="male" id="partner-male" className="text-orange border-white/20" />
-              <Label htmlFor="partner-male">Male</Label>
+              <Label htmlFor="partner-male" className="text-white">Male</Label>
             </div>
             <div className="flex items-center gap-2">
               <RadioGroupItem value="female" id="partner-female" className="text-orange border-white/20" />
-              <Label htmlFor="partner-female">Female</Label>
+              <Label htmlFor="partner-female" className="text-white">Female</Label>
             </div>
             <div className="flex items-center gap-2">
               <RadioGroupItem value="other" id="partner-other" className="text-orange border-white/20" />
-              <Label htmlFor="partner-other">Other</Label>
+              <Label htmlFor="partner-other" className="text-white">Other</Label>
             </div>
           </RadioGroup>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="partnerBirthDate">Birth Date</Label>
+          <Label htmlFor="partnerBirthDate" className="text-white">Birth Date</Label>
           <div className="relative">
             <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-orange" size={18} />
             <Input
@@ -246,7 +247,7 @@ const Match = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="partnerBirthTime">Birth Time</Label>
+          <Label htmlFor="partnerBirthTime" className="text-white">Birth Time</Label>
           <div className="relative">
             <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-orange" size={18} />
             <Input
@@ -261,7 +262,7 @@ const Match = () => {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="partnerBirthPlace">Birth Place</Label>
+          <Label htmlFor="partnerBirthPlace" className="text-white">Birth Place</Label>
           <Input
             id="partnerBirthPlace"
             name="partnerBirthPlace"
@@ -278,46 +279,46 @@ const Match = () => {
   const renderChartOptions = () => {
     return (
       <div className="space-y-6">
-        <h2 className="text-2xl font-semibold text-center mb-6">Select Charts to View</h2>
+        <h2 className="text-2xl font-semibold text-center mb-6 text-orange">Select Charts to View</h2>
         
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Person 1: {formData.name}</Label>
+            <Label className="text-white">Person 1: {formData.name}</Label>
             <div className="grid grid-cols-3 gap-4">
-              <Button variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20">
+              <Button variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white">
                 D1 (Birth Chart)
               </Button>
-              <Button variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20">
+              <Button variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white">
                 D9 (Navamsa)
               </Button>
-              <Button variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20">
+              <Button variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white">
                 D10 (Career)
               </Button>
             </div>
           </div>
           
           <div className="space-y-2">
-            <Label>Person 2: {formData.partnerName}</Label>
+            <Label className="text-white">Person 2: {formData.partnerName}</Label>
             <div className="grid grid-cols-3 gap-4">
-              <Button variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20">
+              <Button variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white">
                 D1 (Birth Chart)
               </Button>
-              <Button variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20">
+              <Button variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white">
                 D9 (Navamsa)
               </Button>
-              <Button variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20">
+              <Button variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white">
                 D10 (Career)
               </Button>
             </div>
           </div>
           
           <div className="space-y-2">
-            <Label>Compatibility Analysis</Label>
+            <Label className="text-white">Compatibility Analysis</Label>
             <div className="grid grid-cols-2 gap-4">
-              <Button variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20">
+              <Button variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white">
                 Ashtakoot Matching
               </Button>
-              <Button variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20">
+              <Button variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white">
                 Dashas Compatibility
               </Button>
             </div>
