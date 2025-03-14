@@ -15,6 +15,8 @@ interface UserProfile {
   birth_date: string;
   birth_time: string;
   birth_place: string;
+  birth_place_lat: number | null;
+  birth_place_lng: number | null;
   avatar_url: string;
 }
 
@@ -30,6 +32,10 @@ const ProfileTab = ({ profile, userId, onProfileUpdate }: ProfileTabProps) => {
   const [editableProfile, setEditableProfile] = useState<UserProfile | null>(profile);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(profile?.avatar_url || null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [birthPlaceData, setBirthPlaceData] = useState<{lat: number | null, lng: number | null}>({
+    lat: profile?.birth_place_lat || null,
+    lng: profile?.birth_place_lng || null
+  });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -42,6 +48,18 @@ const ProfileTab = ({ profile, userId, onProfileUpdate }: ProfileTabProps) => {
       setAvatarFile(file);
       setAvatarUrl(URL.createObjectURL(file));
     }
+  };
+
+  const handleLocationSelect = (location: {description: string, lat: number, lng: number}) => {
+    setEditableProfile(prev => ({
+      ...prev,
+      birth_place: location.description,
+    } as UserProfile));
+    
+    setBirthPlaceData({
+      lat: location.lat,
+      lng: location.lng
+    });
   };
 
   const uploadAvatar = async () => {
@@ -92,6 +110,8 @@ const ProfileTab = ({ profile, userId, onProfileUpdate }: ProfileTabProps) => {
           birth_date: editableProfile.birth_date,
           birth_time: editableProfile.birth_time,
           birth_place: editableProfile.birth_place,
+          birth_place_lat: birthPlaceData.lat,
+          birth_place_lng: birthPlaceData.lng,
           ...avatarUpdates,
           updated_at: new Date().toISOString(),
         })
@@ -139,12 +159,17 @@ const ProfileTab = ({ profile, userId, onProfileUpdate }: ProfileTabProps) => {
             loading={loading}
             onAvatarChange={handleAvatarChange}
             onInputChange={handleInputChange}
+            onLocationSelect={handleLocationSelect}
             onSave={saveProfile}
             onCancel={() => {
               setIsEditing(false);
               setEditableProfile(profile);
               setAvatarUrl(profile?.avatar_url || null);
               setAvatarFile(null);
+              setBirthPlaceData({
+                lat: profile?.birth_place_lat || null,
+                lng: profile?.birth_place_lng || null
+              });
             }}
           />
         ) : (
@@ -153,7 +178,13 @@ const ProfileTab = ({ profile, userId, onProfileUpdate }: ProfileTabProps) => {
       </Card>
       
       <Card className="p-6 mt-6 bg-white/5 backdrop-blur-lg border-white/20">
-        <AstrologyData />
+        <AstrologyData 
+          birthDate={profile?.birth_date}
+          birthTime={profile?.birth_time}
+          birthPlace={profile?.birth_place}
+          birthPlaceLat={profile?.birth_place_lat}
+          birthPlaceLng={profile?.birth_place_lng}
+        />
       </Card>
     </>
   );

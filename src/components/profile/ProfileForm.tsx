@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Save } from 'lucide-react';
 import Avatar from './Avatar';
+import LocationAutocomplete from '../LocationAutocomplete';
 
 interface UserProfile {
   id: string;
@@ -16,12 +17,20 @@ interface UserProfile {
   avatar_url: string;
 }
 
+interface LocationData {
+  description: string;
+  place_id: string;
+  lat: number;
+  lng: number;
+}
+
 interface ProfileFormProps {
   profile: UserProfile | null;
   avatarUrl: string | null;
   loading: boolean;
   onAvatarChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onLocationSelect: (location: LocationData) => void;
   onSave: () => Promise<void>;
   onCancel: () => void;
 }
@@ -32,6 +41,7 @@ const ProfileForm = ({
   loading,
   onAvatarChange,
   onInputChange,
+  onLocationSelect,
   onSave,
   onCancel
 }: ProfileFormProps) => {
@@ -89,12 +99,10 @@ const ProfileForm = ({
       
       <div className="space-y-2">
         <Label htmlFor="birth_place" className="text-white">Birth Place</Label>
-        <Input
-          id="birth_place"
-          name="birth_place"
-          value={profile?.birth_place || ''}
-          onChange={onInputChange}
-          className="bg-white/5 border-white/20 text-white"
+        <LocationAutocomplete
+          defaultValue={profile?.birth_place || ''}
+          onLocationSelect={onLocationSelect}
+          placeholder="City, State, Country"
         />
       </div>
       

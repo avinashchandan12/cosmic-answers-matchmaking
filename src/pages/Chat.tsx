@@ -27,6 +27,7 @@ const Chat = () => {
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [chartData, setChartData] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch previous chat messages from Supabase
@@ -63,6 +64,37 @@ const Chat = () => {
     };
     
     fetchChatHistory();
+  }, [user]);
+
+  // Fetch user's chart data if available
+  useEffect(() => {
+    const fetchUserChartData = async () => {
+      if (!user) return;
+      
+      try {
+        // Check if we have saved chart data
+        const { data, error } = await supabase
+          .from('saved_charts')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('chart_type', 'birth_chart')
+          .order('created_at', { ascending: false })
+          .limit(1);
+        
+        if (error) {
+          console.error('Error fetching user chart data:', error);
+          return;
+        }
+        
+        if (data && data.length > 0) {
+          setChartData(data[0].chart_data);
+        }
+      } catch (error) {
+        console.error('Error fetching user chart data:', error);
+      }
+    };
+    
+    fetchUserChartData();
   }, [user]);
 
   useEffect(() => {
@@ -114,14 +146,17 @@ const Chat = () => {
     setInput('');
     
     try {
-      // Call our Supabase Edge Function
-      const { data, error } = await supabase.functions.invoke('chat-ai', {
-        body: { prompt: input }
+      // Call our Supabase Edge Function for AI response
+      const { data, error } = await supabase.functions.invoke('astro-ai', {
+        body: { 
+          question: input,
+          chartData: chartData 
+        }
       });
       
       if (error) throw error;
       
-      const aiResponse = data.response;
+      const aiResponse = data.answer;
       
       const aiMessage: Message = {
         id: Date.now().toString(),
@@ -213,7 +248,7 @@ const Chat = () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyPress}
-                placeholder="Ask about your relationship compatibility..."
+                placeholder="Ask about your astrological chart or compatibility..."
                 className="w-full p-4 pr-14 rounded-xl bg-white/5 border border-white/20 focus:outline-none focus:ring-2 focus:ring-orange resize-none text-white placeholder:text-white/50"
                 rows={2}
                 disabled={loading}
@@ -232,11 +267,11 @@ const Chat = () => {
             <h3 className="text-xl font-semibold mb-3 text-orange">Suggested Questions</h3>
             <div className="flex flex-wrap gap-2">
               {[
-                "What does our compatibility score mean?",
-                "How is our Mangal Dosha affecting us?",
-                "When is a good time for marriage?",
-                "What planetary dasha are we in?",
-                "How can we improve our relationship?"
+                "What does my birth chart reveal about my personality?",
+                "How does my Moon sign affect my emotions?",
+                "What career paths are favorable based on my chart?",
+                "When is my next favorable period for relationships?",
+                "How can I balance the challenging aspects in my chart?"
               ].map((question, index) => (
                 <Button
                   key={index}

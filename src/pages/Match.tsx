@@ -9,11 +9,15 @@ import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
 import Navigation from '@/components/Navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import LocationAutocomplete from '@/components/LocationAutocomplete';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Steps: Personal info, Partner info, Birth details
 const TOTAL_STEPS = 3;
 const Match = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     // User data
@@ -22,23 +26,26 @@ const Match = () => {
     birthDate: '',
     birthTime: '',
     birthPlace: '',
+    birthPlaceLat: null as number | null,
+    birthPlaceLng: null as number | null,
     // Partner data
     partnerName: '',
     partnerGender: '',
     partnerBirthDate: '',
     partnerBirthTime: '',
-    partnerBirthPlace: ''
+    partnerBirthPlace: '',
+    partnerBirthPlaceLat: null as number | null,
+    partnerBirthPlaceLng: null as number | null
   });
+  
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const {
-      name,
-      value
-    } = e.target;
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
   };
+  
   const handleGenderChange = (value: string, person: 'user' | 'partner') => {
     if (person === 'user') {
       setFormData(prev => ({
@@ -52,32 +59,133 @@ const Match = () => {
       }));
     }
   };
-  const saveProfile = () => {
-    // In a real app, you would save to a database or localStorage
-    localStorage.setItem('userProfile', JSON.stringify({
-      name: formData.name,
-      gender: formData.gender,
-      birthDate: formData.birthDate,
-      birthTime: formData.birthTime,
-      birthPlace: formData.birthPlace
-    }));
-    toast({
-      title: "Profile Saved",
-      description: "Your profile has been saved successfully."
-    });
+  
+  const handleLocationSelect = (location: {description: string, lat: number, lng: number}, person: 'user' | 'partner') => {
+    if (person === 'user') {
+      setFormData(prev => ({
+        ...prev,
+        birthPlace: location.description,
+        birthPlaceLat: location.lat,
+        birthPlaceLng: location.lng
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        partnerBirthPlace: location.description,
+        partnerBirthPlaceLat: location.lat,
+        partnerBirthPlaceLng: location.lng
+      }));
+    }
   };
-  const nextStep = () => {
+  
+  const saveProfile = async () => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to save your profile.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      // Check if profile exists
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+        
+      // Update profile with birth details
+      await supabase
+        .from('profiles')
+        .update({
+          name: formData.name,
+          gender: formData.gender,
+          birth_date: formData.birthDate,
+          birth_time: formData.birthTime,
+          birth_place: formData.birthPlace,
+          birth_place_lat: formData.birthPlaceLat,
+          birth_place_lng: formData.birthPlaceLng,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+      
+      toast({
+        title: "Profile Saved",
+        description: "Your profile has been saved successfully."
+      });
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save profile. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  const saveMatch = async () => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to save compatibility match.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('matches')
+        .insert({
+          user_id: user.id,
+          partner_name: formData.partnerName,
+          partner_birth_date: formData.partnerBirthDate,
+          partner_birth_time: formData.partnerBirthTime,
+          partner_birth_place: formData.partnerBirthPlace,
+          partner_birth_place_lat: formData.partnerBirthPlaceLat,
+          partner_birth_place_lng: formData.partnerBirthPlaceLng,
+          compatibility_score: null // Will be calculated later
+        })
+        .select();
+      
+      if (error) throw error;
+      
+      toast({
+        title: "Match Saved",
+        description: "Your compatibility match has been saved successfully."
+      });
+      
+      return data?.[0]?.id;
+    } catch (error) {
+      console.error('Error saving match:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save match. Please try again.",
+        variant: "destructive"
+      });
+      return null;
+    }
+  };
+  
+  const nextStep = async () => {
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep(currentStep + 1);
     } else {
+      // Save the match before navigating to results
+      const matchId = await saveMatch();
+      
       // Submit form and navigate to results
       navigate('/results', {
         state: {
-          formData
+          formData,
+          matchId
         }
       });
     }
   };
+  
   const prevStep = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
@@ -86,6 +194,7 @@ const Match = () => {
       navigate('/');
     }
   };
+  
   const renderStepIndicator = () => {
     return <div className="flex justify-center items-center gap-8 mb-8">
         {[1, 2, 3].map(step => <div key={step} className={`flex items-center justify-center rounded-full h-12 w-12 text-white font-medium 
@@ -94,6 +203,7 @@ const Match = () => {
           </div>)}
       </div>;
   };
+  
   const renderPersonalInfo = () => {
     return <div className="space-y-6">
         <h2 className="text-2xl font-semibold text-center mb-6 text-orange">Enter Your Details</h2>
@@ -139,7 +249,11 @@ const Match = () => {
 
         <div className="space-y-2">
           <Label htmlFor="birthPlace" className="text-white">Birth Place</Label>
-          <Input id="birthPlace" name="birthPlace" value={formData.birthPlace} onChange={handleInputChange} placeholder="City, State, Country" className="bg-white/10 border-white/20 text-white placeholder:text-gray-400" />
+          <LocationAutocomplete 
+            defaultValue={formData.birthPlace}
+            onLocationSelect={(location) => handleLocationSelect(location, 'user')}
+            placeholder="City, State, Country"
+          />
         </div>
 
         <Button className="w-full bg-purple-light hover:bg-purple text-white" onClick={saveProfile}>
@@ -148,6 +262,7 @@ const Match = () => {
         </Button>
       </div>;
   };
+  
   const renderPartnerInfo = () => {
     return <div className="space-y-6">
         <h2 className="text-2xl font-semibold text-center mb-6 text-orange">Enter Your Partner Details</h2>
@@ -193,10 +308,15 @@ const Match = () => {
 
         <div className="space-y-2">
           <Label htmlFor="partnerBirthPlace" className="text-white">Birth Place</Label>
-          <Input id="partnerBirthPlace" name="partnerBirthPlace" value={formData.partnerBirthPlace} onChange={handleInputChange} placeholder="City, State, Country" className="bg-white/10 border-white/20 text-white placeholder:text-gray-400" />
+          <LocationAutocomplete 
+            defaultValue={formData.partnerBirthPlace}
+            onLocationSelect={(location) => handleLocationSelect(location, 'partner')}
+            placeholder="City, State, Country"
+          />
         </div>
       </div>;
   };
+  
   const renderChartOptions = () => {
     return <div className="space-y-6">
         <h2 className="text-2xl font-semibold text-center mb-6 text-orange">Select Charts to View</h2>
@@ -246,6 +366,7 @@ const Match = () => {
         </div>
       </div>;
   };
+  
   return <div className="min-h-screen bg-purple-background text-white">
       <Navigation />
       

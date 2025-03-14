@@ -1,11 +1,11 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from "@/components/ui/input";
 import { Command, CommandInput, CommandList, CommandItem, CommandGroup } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Loader2 } from 'lucide-react';
-import { GOOGLE_MAPS_API_KEY } from '@/config/api';
 import { useDebounce } from '@/hooks/use-debounce';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface LocationData {
   description: string;
@@ -41,37 +41,20 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
       try {
         setLoading(true);
         
-        // In a real app, we would make a call to a secure backend that proxies Google Maps API
-        // For demo purposes, we're using a mock response
-        // In production, replace this with a real API call
+        const { data, error } = await supabase.functions.invoke('location-autocomplete', {
+          body: { query: debouncedValue }
+        });
         
-        // Mock response while we wait for API key setup
-        const mockResponse = [
-          {
-            description: "New York, NY, USA",
-            place_id: "mock-place-id-1",
-            lat: 40.7128,
-            lng: -74.0060
-          },
-          {
-            description: "New Delhi, Delhi, India",
-            place_id: "mock-place-id-2",
-            lat: 28.6139,
-            lng: 77.2090
-          },
-          {
-            description: "New Orleans, LA, USA",
-            place_id: "mock-place-id-3",
-            lat: 29.9511,
-            lng: -90.0715
-          }
-        ].filter(location => 
-          location.description.toLowerCase().includes(debouncedValue.toLowerCase())
-        );
+        if (error) {
+          console.error('Error fetching locations:', error);
+          setLocations([]);
+          return;
+        }
         
-        setLocations(mockResponse);
+        setLocations(data.results || []);
       } catch (error) {
         console.error('Error fetching location suggestions:', error);
+        setLocations([]);
       } finally {
         setLoading(false);
       }
