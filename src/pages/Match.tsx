@@ -150,7 +150,7 @@ const Match = () => {
   };
   const renderPartnerInfo = () => {
     return <div className="space-y-6">
-        <h2 className="text-2xl font-semibold text-center mb-6 text-orange">Enter Second Person's Details</h2>
+        <h2 className="text-2xl font-semibold text-center mb-6 text-orange">Enter Your Partner Details</h2>
         
         <div className="space-y-2">
           <Label htmlFor="partnerName" className="text-white">Full Name</Label>
