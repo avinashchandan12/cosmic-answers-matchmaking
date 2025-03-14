@@ -18,6 +18,8 @@ interface UserProfile {
   birth_date: string;
   birth_time: string;
   birth_place: string;
+  birth_place_lat: number | null;
+  birth_place_lng: number | null;
   avatar_url: string;
 }
 
