@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Steps: Personal info, Partner info, Birth details
 const TOTAL_STEPS = 3;
-
 const Match = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
@@ -24,28 +22,36 @@ const Match = () => {
     birthDate: '',
     birthTime: '',
     birthPlace: '',
-
     // Partner data
     partnerName: '',
     partnerGender: '',
     partnerBirthDate: '',
     partnerBirthTime: '',
-    partnerBirthPlace: '',
+    partnerBirthPlace: ''
   });
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const {
+      name,
+      value
+    } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
-
   const handleGenderChange = (value: string, person: 'user' | 'partner') => {
     if (person === 'user') {
-      setFormData(prev => ({ ...prev, gender: value }));
+      setFormData(prev => ({
+        ...prev,
+        gender: value
+      }));
     } else {
-      setFormData(prev => ({ ...prev, partnerGender: value }));
+      setFormData(prev => ({
+        ...prev,
+        partnerGender: value
+      }));
     }
   };
-
   const saveProfile = () => {
     // In a real app, you would save to a database or localStorage
     localStorage.setItem('userProfile', JSON.stringify({
@@ -55,22 +61,23 @@ const Match = () => {
       birthTime: formData.birthTime,
       birthPlace: formData.birthPlace
     }));
-    
     toast({
       title: "Profile Saved",
-      description: "Your profile has been saved successfully.",
+      description: "Your profile has been saved successfully."
     });
   };
-
   const nextStep = () => {
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep(currentStep + 1);
     } else {
       // Submit form and navigate to results
-      navigate('/results', { state: { formData } });
+      navigate('/results', {
+        state: {
+          formData
+        }
+      });
     }
   };
-
   const prevStep = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
@@ -79,51 +86,26 @@ const Match = () => {
       navigate('/');
     }
   };
-
   const renderStepIndicator = () => {
-    return (
-      <div className="flex justify-center items-center gap-8 mb-8">
-        {[1, 2, 3].map((step) => (
-          <div 
-            key={step} 
-            className={`flex items-center justify-center rounded-full h-12 w-12 text-white font-medium 
-              ${currentStep === step 
-                ? 'bg-orange' 
-                : 'bg-white/10'}`}
-          >
+    return <div className="flex justify-center items-center gap-8 mb-8">
+        {[1, 2, 3].map(step => <div key={step} className={`flex items-center justify-center rounded-full h-12 w-12 text-white font-medium 
+              ${currentStep === step ? 'bg-orange' : 'bg-white/10'}`}>
             {step}
-          </div>
-        ))}
-      </div>
-    );
+          </div>)}
+      </div>;
   };
-
   const renderPersonalInfo = () => {
-    return (
-      <div className="space-y-6">
-        <h2 className="text-2xl font-semibold text-center mb-6 text-orange">
-          Enter First Person's Details
-        </h2>
+    return <div className="space-y-6">
+        <h2 className="text-2xl font-semibold text-center mb-6 text-orange">Enter Your Details</h2>
         
         <div className="space-y-2">
           <Label htmlFor="name" className="text-white">Full Name</Label>
-          <Input
-            id="name"
-            name="name"
-            value={formData.name}
-            onChange={handleInputChange}
-            placeholder="Enter full name"
-            className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-          />
+          <Input id="name" name="name" value={formData.name} onChange={handleInputChange} placeholder="Enter full name" className="bg-white/10 border-white/20 text-white placeholder:text-gray-400" />
         </div>
 
         <div className="space-y-2">
           <Label className="text-white">Gender</Label>
-          <RadioGroup 
-            value={formData.gender} 
-            onValueChange={(value) => handleGenderChange(value, 'user')}
-            className="flex gap-6"
-          >
+          <RadioGroup value={formData.gender} onValueChange={value => handleGenderChange(value, 'user')} className="flex gap-6">
             <div className="flex items-center gap-2">
               <RadioGroupItem value="male" id="male" className="text-orange border-white/20" />
               <Label htmlFor="male" className="text-white">Male</Label>
@@ -143,14 +125,7 @@ const Match = () => {
           <Label htmlFor="birthDate" className="text-white">Birth Date</Label>
           <div className="relative">
             <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-orange" size={18} />
-            <Input
-              id="birthDate"
-              name="birthDate"
-              type="date"
-              value={formData.birthDate}
-              onChange={handleInputChange}
-              className="pl-10 bg-white/10 border-white/20 text-white"
-            />
+            <Input id="birthDate" name="birthDate" type="date" value={formData.birthDate} onChange={handleInputChange} className="pl-10 bg-white/10 border-white/20 text-white" />
           </div>
         </div>
 
@@ -158,64 +133,33 @@ const Match = () => {
           <Label htmlFor="birthTime" className="text-white">Birth Time</Label>
           <div className="relative">
             <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-orange" size={18} />
-            <Input
-              id="birthTime"
-              name="birthTime"
-              type="time"
-              value={formData.birthTime}
-              onChange={handleInputChange}
-              className="pl-10 bg-white/10 border-white/20 text-white"
-            />
+            <Input id="birthTime" name="birthTime" type="time" value={formData.birthTime} onChange={handleInputChange} className="pl-10 bg-white/10 border-white/20 text-white" />
           </div>
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="birthPlace" className="text-white">Birth Place</Label>
-          <Input
-            id="birthPlace"
-            name="birthPlace"
-            value={formData.birthPlace}
-            onChange={handleInputChange}
-            placeholder="City, State, Country"
-            className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-          />
+          <Input id="birthPlace" name="birthPlace" value={formData.birthPlace} onChange={handleInputChange} placeholder="City, State, Country" className="bg-white/10 border-white/20 text-white placeholder:text-gray-400" />
         </div>
 
-        <Button
-          className="w-full bg-purple-light hover:bg-purple text-white"
-          onClick={saveProfile}
-        >
+        <Button className="w-full bg-purple-light hover:bg-purple text-white" onClick={saveProfile}>
           <Save className="mr-2" size={18} />
           Save Details
         </Button>
-      </div>
-    );
+      </div>;
   };
-
   const renderPartnerInfo = () => {
-    return (
-      <div className="space-y-6">
+    return <div className="space-y-6">
         <h2 className="text-2xl font-semibold text-center mb-6 text-orange">Enter Second Person's Details</h2>
         
         <div className="space-y-2">
           <Label htmlFor="partnerName" className="text-white">Full Name</Label>
-          <Input
-            id="partnerName"
-            name="partnerName"
-            value={formData.partnerName}
-            onChange={handleInputChange}
-            placeholder="Enter full name"
-            className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-          />
+          <Input id="partnerName" name="partnerName" value={formData.partnerName} onChange={handleInputChange} placeholder="Enter full name" className="bg-white/10 border-white/20 text-white placeholder:text-gray-400" />
         </div>
 
         <div className="space-y-2">
           <Label className="text-white">Gender</Label>
-          <RadioGroup 
-            value={formData.partnerGender} 
-            onValueChange={(value) => handleGenderChange(value, 'partner')}
-            className="flex gap-6"
-          >
+          <RadioGroup value={formData.partnerGender} onValueChange={value => handleGenderChange(value, 'partner')} className="flex gap-6">
             <div className="flex items-center gap-2">
               <RadioGroupItem value="male" id="partner-male" className="text-orange border-white/20" />
               <Label htmlFor="partner-male" className="text-white">Male</Label>
@@ -235,14 +179,7 @@ const Match = () => {
           <Label htmlFor="partnerBirthDate" className="text-white">Birth Date</Label>
           <div className="relative">
             <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-orange" size={18} />
-            <Input
-              id="partnerBirthDate"
-              name="partnerBirthDate"
-              type="date"
-              value={formData.partnerBirthDate}
-              onChange={handleInputChange}
-              className="pl-10 bg-white/10 border-white/20 text-white"
-            />
+            <Input id="partnerBirthDate" name="partnerBirthDate" type="date" value={formData.partnerBirthDate} onChange={handleInputChange} className="pl-10 bg-white/10 border-white/20 text-white" />
           </div>
         </div>
 
@@ -250,35 +187,18 @@ const Match = () => {
           <Label htmlFor="partnerBirthTime" className="text-white">Birth Time</Label>
           <div className="relative">
             <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-orange" size={18} />
-            <Input
-              id="partnerBirthTime"
-              name="partnerBirthTime"
-              type="time"
-              value={formData.partnerBirthTime}
-              onChange={handleInputChange}
-              className="pl-10 bg-white/10 border-white/20 text-white"
-            />
+            <Input id="partnerBirthTime" name="partnerBirthTime" type="time" value={formData.partnerBirthTime} onChange={handleInputChange} className="pl-10 bg-white/10 border-white/20 text-white" />
           </div>
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="partnerBirthPlace" className="text-white">Birth Place</Label>
-          <Input
-            id="partnerBirthPlace"
-            name="partnerBirthPlace"
-            value={formData.partnerBirthPlace}
-            onChange={handleInputChange}
-            placeholder="City, State, Country"
-            className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
-          />
+          <Input id="partnerBirthPlace" name="partnerBirthPlace" value={formData.partnerBirthPlace} onChange={handleInputChange} placeholder="City, State, Country" className="bg-white/10 border-white/20 text-white placeholder:text-gray-400" />
         </div>
-      </div>
-    );
+      </div>;
   };
-
   const renderChartOptions = () => {
-    return (
-      <div className="space-y-6">
+    return <div className="space-y-6">
         <h2 className="text-2xl font-semibold text-center mb-6 text-orange">Select Charts to View</h2>
         
         <div className="space-y-4">
@@ -324,12 +244,9 @@ const Match = () => {
             </div>
           </div>
         </div>
-      </div>
-    );
+      </div>;
   };
-
-  return (
-    <div className="min-h-screen bg-purple-background text-white">
+  return <div className="min-h-screen bg-purple-background text-white">
       <Navigation />
       
       <div className="container mx-auto px-4 py-10">
@@ -363,18 +280,12 @@ const Match = () => {
               </Tabs>
 
               <div className="mt-8 flex justify-between">
-                <Button 
-                  onClick={prevStep}
-                  className="bg-white/10 hover:bg-white/20 text-white"
-                >
+                <Button onClick={prevStep} className="bg-white/10 hover:bg-white/20 text-white">
                   <ArrowLeft className="mr-2" size={18} />
                   Back
                 </Button>
                 
-                <Button 
-                  onClick={nextStep}
-                  className="bg-orange hover:bg-orange/90 text-white"
-                >
+                <Button onClick={nextStep} className="bg-orange hover:bg-orange/90 text-white">
                   {currentStep === TOTAL_STEPS ? 'See Results' : 'Next'}
                   <ArrowRight className="ml-2" size={18} />
                 </Button>
@@ -383,8 +294,6 @@ const Match = () => {
           </Card>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Match;
