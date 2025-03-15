@@ -2,11 +2,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { MessageCircle, Send, User, Star, Loader2 } from 'lucide-react';
+import { MessageCircle, Send, User, Star, Loader2, Download, BookOpen } from 'lucide-react';
 import Navigation from '@/components/Navigation';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import ChartSelector from '@/components/ChartSelector';
+import html2pdf from 'html2pdf.js';
 
 interface Message {
   id: string;
@@ -29,7 +31,11 @@ const Chat = () => {
   const [loading, setLoading] = useState(false);
   const [chartData, setChartData] = useState<any>(null);
   const [dashaData, setDashaData] = useState<any>(null);
+  const [selectedChartType, setSelectedChartType] = useState('D1');
+  const [divisionalCharts, setDivisionalCharts] = useState<Record<string, any>>({});
+  const [pdfGenerating, setPdfGenerating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   // Fetch previous chat messages from Supabase
   useEffect(() => {
@@ -73,7 +79,7 @@ const Chat = () => {
       if (!user) return;
       
       try {
-        // Check if we have saved chart data
+        // Check if we have saved birth chart data
         const { data: birthChartData, error: birthChartError } = await supabase
           .from('saved_charts')
           .select('*')
@@ -107,6 +113,34 @@ const Chat = () => {
         
         if (dashaChartData && dashaChartData.length > 0) {
           setDashaData(dashaChartData[0].chart_data);
+        }
+        
+        // Fetch all available divisional charts
+        const { data: allCharts, error: allChartsError } = await supabase
+          .from('saved_charts')
+          .select('*')
+          .eq('user_id', user.id)
+          .ilike('chart_type', '%_chart')
+          .order('created_at', { ascending: false });
+          
+        if (allChartsError) {
+          console.error('Error fetching divisional charts:', allChartsError);
+          return;
+        }
+        
+        if (allCharts && allCharts.length > 0) {
+          const chartsData: Record<string, any> = {};
+          
+          allCharts.forEach(chart => {
+            // Extract the chart type (D1, D9, etc.) from the chart_type field
+            const chartTypeMatch = chart.chart_type.match(/^([^_]+)/);
+            if (chartTypeMatch) {
+              const chartType = chartTypeMatch[1].toUpperCase();
+              chartsData[chartType] = chart.chart_data;
+            }
+          });
+          
+          setDivisionalCharts(chartsData);
         }
       } catch (error) {
         console.error('Error fetching user chart data:', error);
@@ -167,13 +201,19 @@ const Chat = () => {
     try {
       const currentDateTime = new Date().toISOString();
       
-      // Call the chat-ai edge function with chart data and dasha data
+      // Determine which chart data to send based on the selected chart type
+      const selectedChartData = selectedChartType === 'D1' 
+        ? chartData 
+        : divisionalCharts[selectedChartType] || chartData;
+      
+      // Call the chat-ai edge function with chart data, dasha data and selected chart type
       const { data, error } = await supabase.functions.invoke('chat-ai', {
         body: { 
           prompt: input,
-          chartData: chartData,
+          chartData: selectedChartData,
           dashaData: dashaData,
-          currentDateTime: currentDateTime
+          currentDateTime: currentDateTime,
+          chartType: selectedChartType
         }
       });
       
@@ -213,6 +253,81 @@ const Chat = () => {
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const handleChartTypeChange = (chartType: string) => {
+    setSelectedChartType(chartType);
+    
+    // Add a system message indicating chart type change
+    const systemMessage: Message = {
+      id: Date.now().toString(),
+      text: `Switched to ${chartType} chart. You can now ask questions specific to this chart type.`,
+      sender: 'ai',
+      timestamp: new Date()
+    };
+    
+    setMessages(prev => [...prev, systemMessage]);
+  };
+
+  const downloadChatPDF = async () => {
+    if (!chatContainerRef.current) return;
+    
+    try {
+      setPdfGenerating(true);
+      
+      // Create a clone of the chat container to modify for PDF
+      const chatElement = chatContainerRef.current.cloneNode(true) as HTMLElement;
+      
+      // Remove any buttons or interactive elements from the PDF
+      const buttons = chatElement.querySelectorAll('button');
+      buttons.forEach(button => button.remove());
+      
+      // Apply PDF-specific styling
+      chatElement.style.backgroundColor = '#ffffff';
+      chatElement.style.color = '#000000';
+      chatElement.style.padding = '20px';
+      chatElement.style.borderRadius = '0';
+      
+      // Add title and header
+      const header = document.createElement('div');
+      header.innerHTML = `
+        <h1 style="text-align: center; color: #6d28d9; font-size: 24px; margin-bottom: 20px;">
+          AstroMatch Consultation Report
+        </h1>
+        <p style="text-align: center; margin-bottom: 30px;">
+          Generated on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}
+        </p>
+        <hr style="margin-bottom: 30px; border-color: #6d28d9;">
+      `;
+      
+      chatElement.insertBefore(header, chatElement.firstChild);
+      
+      // Set options for the PDF
+      const opt = {
+        margin: [10, 10, 10, 10],
+        filename: 'astromatch-chat-export.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+      
+      // Generate the PDF
+      await html2pdf().from(chatElement).set(opt).save();
+      
+      toast({
+        title: "PDF Generated",
+        description: "Your chat history has been downloaded as a PDF.",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setPdfGenerating(false);
+    }
   };
 
   // Function to parse and format AI responses
@@ -263,7 +378,32 @@ const Chat = () => {
             Astrological Consultation
           </h1>
           
-          <Card className="glass-card p-4 h-[70vh] flex flex-col bg-white/5 backdrop-blur-lg border-white/20">
+          <div className="flex justify-between items-center mb-4">
+            <ChartSelector
+              selectedChart={selectedChartType}
+              onSelectChart={handleChartTypeChange}
+            />
+            
+            <Button
+              onClick={downloadChatPDF}
+              className="bg-orange hover:bg-orange/90"
+              disabled={pdfGenerating || messages.length <= 1}
+            >
+              {pdfGenerating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Generating PDF...
+                </>
+              ) : (
+                <>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download Report
+                </>
+              )}
+            </Button>
+          </div>
+          
+          <Card className="glass-card p-4 h-[65vh] flex flex-col bg-white/5 backdrop-blur-lg border-white/20">
             <div className="flex items-center mb-4 pb-4 border-b border-white/10">
               <div className="w-10 h-10 rounded-full bg-orange flex items-center justify-center mr-3">
                 <Star className="text-white" size={20} />
@@ -272,10 +412,18 @@ const Chat = () => {
                 <h2 className="font-medium text-white">AstroMatch AI</h2>
                 <p className="text-sm text-white/70">Vedic Astrology Specialist</p>
               </div>
+              {selectedChartType !== 'D1' && (
+                <div className="ml-auto px-3 py-1 rounded-full bg-orange/20 text-orange text-xs">
+                  {selectedChartType} Chart
+                </div>
+              )}
             </div>
             
             {/* Messages container */}
-            <div className="flex-1 overflow-y-auto mb-4 space-y-4 pr-2">
+            <div 
+              ref={chatContainerRef} 
+              className="flex-1 overflow-y-auto mb-4 space-y-4 pr-2"
+            >
               {messages.map((message) => (
                 <div 
                   key={message.id} 
@@ -309,7 +457,7 @@ const Chat = () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyPress}
-                placeholder="Ask about your astrological chart or compatibility..."
+                placeholder={`Ask about your ${selectedChartType} chart or compatibility...`}
                 className="w-full p-4 pr-14 rounded-xl bg-white/5 border border-white/20 focus:outline-none focus:ring-2 focus:ring-orange resize-none text-white placeholder:text-white/50"
                 rows={2}
                 disabled={loading}
@@ -328,11 +476,11 @@ const Chat = () => {
             <h3 className="text-xl font-semibold mb-3 text-orange">Suggested Questions</h3>
             <div className="flex flex-wrap gap-2">
               {[
-                "What does my birth chart reveal about my personality?",
-                "How does my Moon sign affect my emotions?",
-                "What career paths are favorable based on my chart?",
-                "When will my current Dasha period end?",
-                "What does my current Mahadasha signify in my life?"
+                `What does my ${selectedChartType} chart reveal about my ${selectedChartType === 'D1' ? 'personality' : 'specific traits'}?`,
+                `How does ${selectedChartType === 'D9' ? 'Navamsha chart affect my marriage prospects' : 'my current Dasha period affect my life'}?`,
+                `What career paths are favorable based on my ${selectedChartType === 'D10' ? 'Dashamsha chart' : 'birth chart'}?`,
+                `Explain the significance of ${selectedChartType} chart in Vedic astrology`,
+                `What remedies are recommended based on my ${selectedChartType} chart?`
               ].map((question, index) => (
                 <Button
                   key={index}

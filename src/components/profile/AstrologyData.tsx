@@ -19,6 +19,7 @@ interface AstrologyDataProps {
   birthPlace?: string;
   birthPlaceLat?: number | null;
   birthPlaceLng?: number | null;
+  onDataFetched?: () => void;
 }
 
 const AstrologyData: React.FC<AstrologyDataProps> = ({ 
@@ -26,7 +27,8 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
   birthTime, 
   birthPlace,
   birthPlaceLat,
-  birthPlaceLng
+  birthPlaceLng,
+  onDataFetched
 }) => {
   const { user } = useAuth();
   const [chartData, setChartData] = useState<ChartData | null>(null);
@@ -51,6 +53,7 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
       setError(null);
       setDebugInfo(null);
       
+      // Step 1: Fetch birth chart first
       const result = await fetchBirthChart(
         user.id,
         birthDate,
@@ -67,13 +70,14 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
           description: "Unable to calculate your astrological chart. Please try again later.",
           variant: "destructive"
         });
+        setLoading(false);
         return;
       }
       
       const processedData = processChartData(result.data);
       setChartData(processedData);
       
-      // Fetch dasha data as well
+      // Step 2: After birth chart is fetched successfully, then fetch dasha data
       try {
         // Make a call to the birth-chart edge function with dasha endpoint
         const dashaResult = await supabase.functions.invoke('birth-chart', {
@@ -96,7 +100,7 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
         } else {
           setDashaData(dashaResult.data);
           
-          // Save the dasha data to Supabase
+          // Step 3: Save the dasha data to Supabase
           await supabase
             .from('saved_charts')
             .upsert({
@@ -105,6 +109,53 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
               chart_data: dashaResult.data
             });
         }
+        
+        // Step 4: Now fetch additional divisional charts one by one
+        const chartTypes = ['D9', 'D3', 'D10']; // Add more chart types as needed
+        
+        for (const chartType of chartTypes) {
+          try {
+            const divChartResult = await supabase.functions.invoke('birth-chart', {
+              body: {
+                year: parseInt(birthDate.split('-')[0]),
+                month: parseInt(birthDate.split('-')[1]),
+                date: parseInt(birthDate.split('-')[2]),
+                hours: parseInt(birthTime.split(':')[0]),
+                minutes: parseInt(birthTime.split(':')[1]),
+                seconds: 0,
+                latitude: birthPlaceLat,
+                longitude: birthPlaceLng,
+                timezone: new Date().getTimezoneOffset() / -60,
+                endpoint: `chart/${chartType.toLowerCase()}`
+              }
+            });
+            
+            if (divChartResult.error) {
+              console.error(`Error fetching ${chartType} chart data:`, divChartResult.error);
+              continue;
+            }
+            
+            // Save the divisional chart data
+            await supabase
+              .from('saved_charts')
+              .upsert({
+                user_id: user.id,
+                chart_type: `${chartType.toLowerCase()}_chart`,
+                chart_data: divChartResult.data
+              });
+              
+            console.log(`${chartType} chart data saved successfully`);
+            
+          } catch (chartError) {
+            console.error(`Error in ${chartType} chart calculation:`, chartError);
+          }
+        }
+        
+        // Notify parent that data fetching is complete
+        if (onDataFetched) {
+          onDataFetched();
+        }
+        
       } catch (dashaError: any) {
         console.error('Error in dasha calculation:', dashaError);
       }

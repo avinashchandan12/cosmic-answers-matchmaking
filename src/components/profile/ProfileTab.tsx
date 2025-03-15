@@ -36,6 +36,7 @@ const ProfileTab = ({ profile, userId, onProfileUpdate }: ProfileTabProps) => {
     lat: profile?.birth_place_lat || null,
     lng: profile?.birth_place_lng || null
   });
+  const [updatingAstrology, setUpdatingAstrology] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -88,6 +89,17 @@ const ProfileTab = ({ profile, userId, onProfileUpdate }: ProfileTabProps) => {
     }
   };
 
+  const handleAstrologyDataUpdate = () => {
+    setUpdatingAstrology(false);
+    // Refresh the profile data
+    onProfileUpdate();
+    
+    toast({
+      title: "Astrology Data Updated",
+      description: "Your astrological data has been refreshed based on your new profile information.",
+    });
+  };
+
   const saveProfile = async () => {
     if (!editableProfile) return;
     
@@ -121,18 +133,28 @@ const ProfileTab = ({ profile, userId, onProfileUpdate }: ProfileTabProps) => {
       
       toast({
         title: "Profile Updated",
-        description: "Your profile has been updated successfully.",
+        description: "Your profile has been updated successfully. Refreshing astrological data...",
       });
       
+      // Trigger astrology data update
       setIsEditing(false);
-      onProfileUpdate();
+      setUpdatingAstrology(true);
+      
+      // Delete existing chart data so it will be recalculated
+      await supabase
+        .from('saved_charts')
+        .delete()
+        .eq('user_id', userId);
+      
+      // Profile has been updated, but we won't call onProfileUpdate() yet
+      // We'll wait for the astrology data to be updated first
+      
     } catch (error) {
       toast({
         title: "Error",
         description: "Failed to update profile",
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };
@@ -178,13 +200,21 @@ const ProfileTab = ({ profile, userId, onProfileUpdate }: ProfileTabProps) => {
       </Card>
       
       <Card className="p-6 mt-6 bg-white/5 backdrop-blur-lg border-white/20">
-        <AstrologyData 
-          birthDate={profile?.birth_date}
-          birthTime={profile?.birth_time}
-          birthPlace={profile?.birth_place}
-          birthPlaceLat={profile?.birth_place_lat}
-          birthPlaceLng={profile?.birth_place_lng}
-        />
+        {updatingAstrology ? (
+          <div className="py-4 text-center">
+            <AstrologyLoading />
+            <p className="mt-2 text-white/70">Updating your astrological data based on your new profile information...</p>
+          </div>
+        ) : (
+          <AstrologyData 
+            birthDate={profile?.birth_date}
+            birthTime={profile?.birth_time}
+            birthPlace={profile?.birth_place}
+            birthPlaceLat={profile?.birth_place_lat}
+            birthPlaceLng={profile?.birth_place_lng}
+            onDataFetched={handleAstrologyDataUpdate}
+          />
+        )}
       </Card>
     </>
   );
