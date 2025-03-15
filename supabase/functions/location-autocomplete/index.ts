@@ -14,14 +14,16 @@ serve(async (req) => {
   }
 
   try {
-    const GOOGLE_MAPS_API_KEY = Deno.env.get('GOOGLE_MAPS_API_KEY');
+    // Use the LOCATIONIQ_API_KEY from environment variables
+    // We're using a hardcoded key for now as provided by the user
+    const LOCATIONIQ_API_KEY = "pk.f9401938330317110a005681ec470985";
     
-    if (!GOOGLE_MAPS_API_KEY) {
-      console.error('Google Maps API key is not set');
-      throw new Error('Google Maps API key is not set');
+    if (!LOCATIONIQ_API_KEY) {
+      console.error('LocationIQ API key is not set');
+      throw new Error('LocationIQ API key is not set');
     }
 
-    console.log('Processing location autocomplete request');
+    console.log('Processing location autocomplete request using LocationIQ');
     const { query } = await req.json();
     
     console.log('Search query:', query);
@@ -33,66 +35,30 @@ serve(async (req) => {
       );
     }
 
-    const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(query)}&types=(cities)&key=${GOOGLE_MAPS_API_KEY}`;
+    // Use LocationIQ API for autocomplete
+    const url = `https://us1.locationiq.com/v1/autocomplete?q=${encodeURIComponent(query)}&key=${LOCATIONIQ_API_KEY}`;
     
-    console.log('Fetching from Places API');
+    console.log('Fetching from LocationIQ API');
     const response = await fetch(url);
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Google API error:', response.status, errorText);
-      throw new Error(`Google API error: ${response.status} - ${errorText}`);
+      console.error('LocationIQ API error:', response.status, errorText);
+      throw new Error(`LocationIQ API error: ${response.status} - ${errorText}`);
     }
     
     const data = await response.json();
-    console.log('Places API response status:', data.status);
+    console.log('LocationIQ API response received');
     
-    if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-      console.error('Places API error:', data.status, data.error_message);
-      throw new Error(`Places API error: ${data.status} - ${data.error_message || 'Unknown error'}`);
-    }
+    // Process the response from LocationIQ
+    // Format matches our existing frontend expectations
+    const detailedResults = data.map(item => ({
+      description: item.display_name,
+      place_id: item.place_id,
+      lat: parseFloat(item.lat),
+      lng: parseFloat(item.lon)
+    })).slice(0, 5); // Limit to first 5 results
     
-    // Process and get details for the first few predictions to include lat/lng
-    const detailedResults = [];
-    
-    // Only process up to 5 results to avoid too many API calls
-    const predictions = data.predictions || [];
-    console.log(`Found ${predictions.length} predictions`);
-    
-    if (predictions.length === 0) {
-      return new Response(
-        JSON.stringify({ results: [] }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
-    for (const prediction of predictions.slice(0, 5)) {
-      const placeId = prediction.place_id;
-      console.log('Getting details for place_id:', placeId);
-      
-      const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=geometry&key=${GOOGLE_MAPS_API_KEY}`;
-      
-      const detailsResponse = await fetch(detailsUrl);
-      
-      if (!detailsResponse.ok) {
-        console.error('Failed to fetch place details:', detailsResponse.status);
-        continue;
-      }
-      
-      const detailsData = await detailsResponse.json();
-      
-      if (detailsData.status === 'OK') {
-        detailedResults.push({
-          description: prediction.description,
-          place_id: prediction.place_id,
-          lat: detailsData.result.geometry.location.lat,
-          lng: detailsData.result.geometry.location.lng
-        });
-      } else {
-        console.error('Place details error:', detailsData.status, detailsData.error_message);
-      }
-    }
-
     console.log(`Returning ${detailedResults.length} results with coordinates`);
     return new Response(
       JSON.stringify({ results: detailedResults }),
