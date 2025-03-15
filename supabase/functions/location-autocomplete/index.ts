@@ -38,7 +38,7 @@ serve(async (req) => {
     // Use LocationIQ API for autocomplete
     const url = `https://us1.locationiq.com/v1/autocomplete?q=${encodeURIComponent(query)}&key=${LOCATIONIQ_API_KEY}`;
     
-    console.log('Fetching from LocationIQ API');
+    console.log('Fetching from LocationIQ API:', url);
     const response = await fetch(url);
     
     if (!response.ok) {
@@ -49,6 +49,21 @@ serve(async (req) => {
     
     const data = await response.json();
     console.log('LocationIQ API response received');
+    
+    // Check if data is an array before trying to map it
+    if (!Array.isArray(data)) {
+      console.error('Unexpected response format from LocationIQ:', data);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Unexpected response format from LocationIQ',
+          results: [] 
+        }),
+        { 
+          status: 200, // Return 200 even for errors to avoid edge function failure
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
     
     // Process the response from LocationIQ
     // Format matches our existing frontend expectations
@@ -67,9 +82,9 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in location-autocomplete function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message, results: [] }),
       { 
-        status: 500,
+        status: 200, // Return 200 even for errors to avoid edge function failure
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
