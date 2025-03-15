@@ -134,6 +134,8 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
         dashas: dashaData
       };
       
+      console.log('Combined chart data:', JSON.stringify(combinedData, null, 2));
+      
       const { error: saveError } = await supabase
         .from('saved_charts')
         .insert({
@@ -162,6 +164,8 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
   };
   
   const processChartData = (data: any) => {
+    console.log('Processing chart data:', JSON.stringify(data, null, 2));
+    
     let ascendant = "Unknown";
     let moonSign = "Unknown";
     let sunSign = "Unknown";
@@ -209,11 +213,14 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
                 break;
               }
             }
+            if (currentDasha !== "Unknown") break;
           }
         } catch (error) {
           console.error('Error parsing dasha data:', error);
         }
       }
+      
+      console.log('Processed chart data:', { ascendant, moonSign, sunSign, currentDasha });
       
       setChartData({
         ascendant,
