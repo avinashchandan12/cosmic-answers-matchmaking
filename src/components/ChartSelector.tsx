@@ -1,69 +1,67 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandGroup, CommandItem } from "@/components/ui/command";
 import { Check, ChevronDown } from 'lucide-react';
-
-interface ChartOption {
-  id: string;
-  name: string;
-}
 
 interface ChartSelectorProps {
   selectedChart: string;
-  onSelectChart: (chartId: string) => void;
+  onSelectChart: (chart: string) => void;
 }
 
-const ChartSelector: React.FC<ChartSelectorProps> = ({ 
-  selectedChart, 
-  onSelectChart 
-}) => {
-  const chartOptions: ChartOption[] = [
-    { id: 'D1', name: 'D1 Rashi (Birth Chart)' },
-    { id: 'D9', name: 'D9 Navamsha (Marriage)' },
-    { id: 'D3', name: 'D3 Drekkana (Siblings)' },
-    { id: 'D10', name: 'D10 Dashamsha (Career)' },
-    { id: 'D7', name: 'D7 Saptamsha (Children)' },
-    { id: 'D2', name: 'D2 Hora (Wealth)' },
-    { id: 'D4', name: 'D4 Chaturthamsha (Property)' },
-    { id: 'D12', name: 'D12 Dwadashamsha (Parents)' },
-    { id: 'D5', name: 'D5 Panchamsha (Spiritual Merit)' },
-    { id: 'D6', name: 'D6 Shashthamsha (Health)' },
-    { id: 'D8', name: 'D8 Ashtamsha (Obstacles)' },
-    { id: 'D11', name: 'D11 Rudramsha (Dharma)' },
-    { id: 'D16', name: 'D16 Shodashamsha (Vehicles)' },
+const ChartSelector: React.FC<ChartSelectorProps> = ({ selectedChart, onSelectChart }) => {
+  const [open, setOpen] = useState(false);
+
+  const charts = [
+    { value: "D1", label: "D1 (Rashi) - Birth Chart" },
+    { value: "D9", label: "D9 (Navamsha) - Marriage & Spirituality" },
+    { value: "D3", label: "D3 (Drekkana) - Siblings & Courage" },
+    { value: "D10", label: "D10 (Dashamsha) - Career & Profession" }
   ];
 
-  const selectedChartName = chartOptions.find(chart => chart.id === selectedChart)?.name || selectedChart;
-
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="text-white bg-white/10 border-white/20 hover:bg-white/20">
-          <span className="mr-1">Chart:</span> {selectedChartName}
-          <ChevronDown className="ml-2 h-4 w-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="bg-purple-800 border-white/20 text-white">
-        {chartOptions.map((chart) => (
-          <DropdownMenuItem
-            key={chart.id}
-            className={`flex items-center justify-between cursor-pointer ${
-              selectedChart === chart.id ? 'bg-white/10' : ''
-            } hover:bg-white/20`}
-            onClick={() => onSelectChart(chart.id)}
+    <div className="relative">
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className="bg-purple-light border-white/20 text-white hover:bg-purple-light/80 hover:text-white justify-between w-[220px] md:w-[280px]"
           >
-            {chart.name}
-            {selectedChart === chart.id && <Check className="h-4 w-4 ml-2" />}
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+            {selectedChart ? 
+              charts.find((chart) => chart.value === selectedChart)?.label || selectedChart
+              : "Select chart..."}
+            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="p-0 bg-purple-dark border-white/20 text-white w-[220px] md:w-[280px]">
+          <Command className="bg-transparent">
+            <CommandGroup>
+              {charts.map((chart) => (
+                <CommandItem
+                  key={chart.value}
+                  value={chart.value}
+                  onSelect={() => {
+                    onSelectChart(chart.value);
+                    setOpen(false);
+                  }}
+                  className="cursor-pointer hover:bg-white/10"
+                >
+                  <Check
+                    className={`mr-2 h-4 w-4 ${
+                      selectedChart === chart.value ? "opacity-100 text-orange" : "opacity-0"
+                    }`}
+                  />
+                  {chart.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    </div>
   );
 };
 

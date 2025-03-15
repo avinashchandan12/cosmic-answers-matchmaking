@@ -20,6 +20,7 @@ interface AstrologyDataProps {
   birthPlaceLat?: number | null;
   birthPlaceLng?: number | null;
   onDataFetched?: () => void;
+  shouldRefresh?: boolean;
 }
 
 const AstrologyData: React.FC<AstrologyDataProps> = ({ 
@@ -28,7 +29,8 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
   birthPlace,
   birthPlaceLat,
   birthPlaceLng,
-  onDataFetched
+  onDataFetched,
+  shouldRefresh = false
 }) => {
   const { user } = useAuth();
   const [chartData, setChartData] = useState<ChartData | null>(null);
@@ -36,12 +38,15 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [dataLoaded, setDataLoaded] = useState(false);
   
   useEffect(() => {
-    if (birthDate && birthTime && birthPlaceLat && birthPlaceLng && user) {
+    // Only fetch data once when component mounts or when shouldRefresh is true
+    if ((birthDate && birthTime && birthPlaceLat && birthPlaceLng && user && !dataLoaded) || shouldRefresh) {
+      console.log("Fetching astrological data...", { shouldRefresh, dataLoaded });
       fetchChartData();
     }
-  }, [birthDate, birthTime, birthPlaceLat, birthPlaceLng, user]);
+  }, [birthDate, birthTime, birthPlaceLat, birthPlaceLng, user, shouldRefresh]);
   
   const fetchChartData = async () => {
     if (!birthDate || !birthTime || birthPlaceLat === undefined || birthPlaceLng === undefined || !user) {
@@ -76,9 +81,11 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
       
       const processedData = processChartData(result.data);
       setChartData(processedData);
+      setDataLoaded(true);
       
       // Step 2: After birth chart is fetched successfully, then fetch dasha data
       try {
+        console.log("Fetching dasha data...");
         // Make a call to the birth-chart edge function with dasha endpoint
         const dashaResult = await supabase.functions.invoke('birth-chart', {
           body: {
@@ -98,6 +105,7 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
         if (dashaResult.error) {
           console.error('Error fetching dasha data:', dashaResult.error);
         } else {
+          console.log("Dasha data fetched successfully");
           setDashaData(dashaResult.data);
           
           // Step 3: Save the dasha data to Supabase
@@ -110,11 +118,12 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
             });
         }
         
-        // Step 4: Now fetch additional divisional charts one by one
+        // Step 4: Now fetch additional divisional charts one by one sequentially
         const chartTypes = ['D9', 'D3', 'D10']; // Add more chart types as needed
         
         for (const chartType of chartTypes) {
           try {
+            console.log(`Fetching ${chartType} chart data...`);
             const divChartResult = await supabase.functions.invoke('birth-chart', {
               body: {
                 year: parseInt(birthDate.split('-')[0]),

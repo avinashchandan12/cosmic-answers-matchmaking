@@ -74,6 +74,9 @@ serve(async (req) => {
       systemMessage += `\n\nYou have access to the user's Dasha periods information, which shows the planetary periods that influence different phases of their life according to Vedic astrology. When asked about past, present, or future phases, refer to the appropriate Dasha and Antardasha (sub-period) information.`;
     }
 
+    console.log('Calling OpenAI API with prompt:', prompt);
+    console.log('Using chart type:', selectedChartType);
+
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -95,10 +98,12 @@ serve(async (req) => {
     const data = await response.json();
     
     if (!response.ok) {
+      console.error('OpenAI API error:', data);
       throw new Error(data.error?.message || 'Error from OpenAI API');
     }
 
     const aiResponse = data.choices[0].message.content;
+    console.log('Successfully received response from OpenAI');
 
     return new Response(JSON.stringify({ response: aiResponse }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

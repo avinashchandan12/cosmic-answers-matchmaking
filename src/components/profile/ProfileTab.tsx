@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import ProfileForm from './ProfileForm';
@@ -38,6 +38,17 @@ const ProfileTab = ({ profile, userId, onProfileUpdate }: ProfileTabProps) => {
     lng: profile?.birth_place_lng || null
   });
   const [updatingAstrology, setUpdatingAstrology] = useState(false);
+  const [profileUpdated, setProfileUpdated] = useState(false);
+
+  // Update the editable profile when the profile prop changes
+  useEffect(() => {
+    setEditableProfile(profile);
+    setAvatarUrl(profile?.avatar_url || null);
+    setBirthPlaceData({
+      lat: profile?.birth_place_lat || null,
+      lng: profile?.birth_place_lng || null
+    });
+  }, [profile]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -91,7 +102,10 @@ const ProfileTab = ({ profile, userId, onProfileUpdate }: ProfileTabProps) => {
   };
 
   const handleAstrologyDataUpdate = () => {
+    console.log('Astrology data updated');
     setUpdatingAstrology(false);
+    setProfileUpdated(false);
+    
     // Refresh the profile data
     onProfileUpdate();
     
@@ -115,6 +129,13 @@ const ProfileTab = ({ profile, userId, onProfileUpdate }: ProfileTabProps) => {
         }
       }
       
+      // Check if birth-related fields have been updated
+      const birthDataChanged = profile?.birth_date !== editableProfile.birth_date ||
+                               profile?.birth_time !== editableProfile.birth_time ||
+                               profile?.birth_place !== editableProfile.birth_place ||
+                               profile?.birth_place_lat !== birthPlaceData.lat ||
+                               profile?.birth_place_lng !== birthPlaceData.lng;
+      
       const { error } = await supabase
         .from('profiles')
         .update({
@@ -132,23 +153,38 @@ const ProfileTab = ({ profile, userId, onProfileUpdate }: ProfileTabProps) => {
 
       if (error) throw error;
       
+      // Update local profile state with new values
+      setEditableProfile(prev => ({
+        ...prev,
+        ...avatarUpdates,
+      } as UserProfile));
+      
       toast({
         title: "Profile Updated",
-        description: "Your profile has been updated successfully. Refreshing astrological data...",
+        description: "Your profile has been updated successfully.",
       });
-      
-      // Trigger astrology data update
-      setIsEditing(false);
-      setUpdatingAstrology(true);
-      
-      // Delete existing chart data so it will be recalculated
-      await supabase
-        .from('saved_charts')
-        .delete()
-        .eq('user_id', userId);
-      
-      // Profile has been updated, but we won't call onProfileUpdate() yet
-      // We'll wait for the astrology data to be updated first
+
+      // Only trigger astrology data update if birth-related fields changed
+      if (birthDataChanged) {
+        setProfileUpdated(true);
+        toast({
+          title: "Refreshing Astrological Data",
+          description: "Updating your astrological data based on your new profile information...",
+        });
+        
+        setIsEditing(false);
+        setUpdatingAstrology(true);
+        
+        // Delete existing chart data so it will be recalculated
+        await supabase
+          .from('saved_charts')
+          .delete()
+          .eq('user_id', userId);
+      } else {
+        setIsEditing(false);
+        // If birth data hasn't changed, just update the profile UI without triggering astrology update
+        onProfileUpdate();
+      }
       
     } catch (error) {
       toast({
@@ -156,6 +192,7 @@ const ProfileTab = ({ profile, userId, onProfileUpdate }: ProfileTabProps) => {
         description: "Failed to update profile",
         variant: "destructive",
       });
+    } finally {
       setLoading(false);
     }
   };
@@ -214,6 +251,7 @@ const ProfileTab = ({ profile, userId, onProfileUpdate }: ProfileTabProps) => {
             birthPlaceLat={profile?.birth_place_lat}
             birthPlaceLng={profile?.birth_place_lng}
             onDataFetched={handleAstrologyDataUpdate}
+            shouldRefresh={profileUpdated}
           />
         )}
       </Card>

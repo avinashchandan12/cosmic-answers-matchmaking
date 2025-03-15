@@ -30,7 +30,7 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
   const [locations, setLocations] = useState<LocationData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [open, setOpen] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const debouncedValue = useDebounce(inputValue, 500);
 
   useEffect(() => {
@@ -89,58 +89,65 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
   }, [debouncedValue]);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <div className="relative w-full">
-          <Input
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            placeholder={placeholder}
-            className="bg-white/5 border-white/20 text-white pl-10"
-            onFocus={() => setOpen(true)}
-          />
-          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-orange" size={16} />
+    <div className="relative w-full">
+      <div className="relative">
+        <Input
+          value={inputValue}
+          onChange={(e) => {
+            setInputValue(e.target.value);
+            if (e.target.value.length >= 3) {
+              setShowSuggestions(true);
+            }
+          }}
+          onFocus={() => {
+            if (inputValue.length >= 3) {
+              setShowSuggestions(true);
+            }
+          }}
+          placeholder={placeholder}
+          className="bg-white/5 border-white/20 text-white pl-10"
+          type="text"
+        />
+        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-orange" size={16} />
+      </div>
+
+      {showSuggestions && (
+        <div className="absolute z-10 w-full mt-1 bg-purple-dark border border-white/20 rounded-md shadow-lg max-h-60 overflow-auto">
+          {loading ? (
+            <div className="flex items-center justify-center p-4">
+              <Loader2 className="h-6 w-6 text-orange animate-spin" />
+            </div>
+          ) : locations.length > 0 ? (
+            <ul className="py-1">
+              {locations.map((location) => (
+                <li
+                  key={location.place_id}
+                  className="px-4 py-2 hover:bg-white/10 cursor-pointer flex items-center"
+                  onClick={() => {
+                    setInputValue(location.description);
+                    onLocationSelect(location);
+                    setShowSuggestions(false);
+                  }}
+                >
+                  <MapPin className="mr-2 h-4 w-4 text-orange" />
+                  <span>{location.description}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="p-4 text-center">
+              {error ? (
+                <p className="text-sm text-red-400">{error}</p>
+              ) : inputValue.length >= 3 ? (
+                <p className="text-sm text-gray-400">No locations found</p>
+              ) : (
+                <p className="text-sm text-gray-400">Type at least 3 characters to search</p>
+              )}
+            </div>
+          )}
         </div>
-      </PopoverTrigger>
-      <PopoverContent className="p-0 bg-purple-light border-white/20 text-white w-full min-w-[240px]" align="start">
-        <Command className="bg-transparent">
-          <CommandList>
-            {loading ? (
-              <div className="flex items-center justify-center p-4">
-                <Loader2 className="h-6 w-6 text-orange animate-spin" />
-              </div>
-            ) : locations.length > 0 ? (
-              <CommandGroup>
-                {locations.map((location) => (
-                  <CommandItem
-                    key={location.place_id}
-                    onSelect={() => {
-                      setInputValue(location.description);
-                      onLocationSelect(location);
-                      setOpen(false);
-                    }}
-                    className="cursor-pointer hover:bg-white/10"
-                  >
-                    <MapPin className="mr-2 h-4 w-4 text-orange" />
-                    {location.description}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            ) : (
-              <div className="p-4 text-center">
-                {error ? (
-                  <p className="text-sm text-red-400">{error}</p>
-                ) : inputValue.length >= 3 ? (
-                  <p className="text-sm text-gray-400">No locations found</p>
-                ) : (
-                  <p className="text-sm text-gray-400">Type at least 3 characters to search</p>
-                )}
-              </div>
-            )}
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
+      )}
+    </div>
   );
 };
 
