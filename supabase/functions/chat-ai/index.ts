@@ -15,12 +15,8 @@ serve(async (req) => {
 
   try {
     const { prompt, chartData, dashaData, currentDateTime, chartType } = await req.json();
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+    const deepSeekApiKey = Deno.env.get('DEEPSEEK_API_KEY') || 'sk-2f7075c883d44d438f0bcb14fd8b1e0e';
     
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key is not set. Please add it to your Supabase project.');
-    }
-
     if (!prompt) {
       throw new Error('Prompt is required');
     }
@@ -74,18 +70,18 @@ serve(async (req) => {
       systemMessage += `\n\nYou have access to the user's Dasha periods information, which shows the planetary periods that influence different phases of their life according to Vedic astrology. When asked about past, present, or future phases, refer to the appropriate Dasha and Antardasha (sub-period) information.`;
     }
 
-    console.log('Calling OpenAI API with prompt:', prompt);
+    console.log('Calling DeepSeek API with prompt:', prompt);
     console.log('Using chart type:', selectedChartType);
 
-    // Call OpenAI API
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Call DeepSeek API
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${deepSeekApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'deepseek-chat',
         messages: [
           { role: 'system', content: systemMessage },
           { role: 'user', content: userMessageWithContext }
@@ -98,12 +94,12 @@ serve(async (req) => {
     const data = await response.json();
     
     if (!response.ok) {
-      console.error('OpenAI API error:', data);
-      throw new Error(data.error?.message || 'Error from OpenAI API');
+      console.error('DeepSeek API error:', data);
+      throw new Error(data.error?.message || 'Error from DeepSeek API');
     }
 
     const aiResponse = data.choices[0].message.content;
-    console.log('Successfully received response from OpenAI');
+    console.log('Successfully received response from DeepSeek');
 
     return new Response(JSON.stringify({ response: aiResponse }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

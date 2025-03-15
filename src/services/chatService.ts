@@ -1,17 +1,17 @@
 
 // WARNING: This is a temporary solution. In production, API keys should not be exposed in frontend code
-const OPENAI_API_KEY = 'YOUR_OPENAI_API_KEY';
+const DEEPSEEK_API_KEY = 'sk-2f7075c883d44d438f0bcb14fd8b1e0e';
 
 export const getChatResponse = async (message: string) => {
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4',
+        model: 'deepseek-chat',
         messages: [
           {
             role: 'system',
