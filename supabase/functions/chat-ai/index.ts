@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt } = await req.json();
+    const { prompt, chartData, dashaData, currentDateTime } = await req.json();
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     
     if (!openAIApiKey) {
@@ -25,12 +25,29 @@ serve(async (req) => {
       throw new Error('Prompt is required');
     }
 
+    // Add the current date and time to the context
+    const currentDateTimeString = currentDateTime || new Date().toISOString();
+    
     // Prepare the system message for astrology-focused assistant
-    const systemMessage = `You are an expert in Vedic astrology with deep knowledge of birth charts, compatibility matching, 
+    let systemMessage = `You are an expert in Vedic astrology with deep knowledge of birth charts, compatibility matching, 
     and astrological predictions. Provide insightful, accurate information about astrological concepts, 
     planetary influences, and relationship compatibility. Your responses should reflect the depth and 
     complexity of Vedic astrological traditions while being accessible to beginners. 
-    When discussing compatibility, consider factors like Mangal Dosha, Nakshatras, and planetary positions.`;
+    When discussing compatibility, consider factors like Mangal Dosha, Nakshatras, and planetary positions.
+    
+    The current date and time is: ${currentDateTimeString}`;
+
+    // Add chart data context if available
+    let userMessageWithContext = prompt;
+    if (chartData) {
+      userMessageWithContext = `My birth chart data: ${JSON.stringify(chartData)}\n\n${prompt}`;
+    }
+    
+    // Add dasha data context if available
+    if (dashaData) {
+      userMessageWithContext = `My dasha data: ${JSON.stringify(dashaData)}\n\n${userMessageWithContext}`;
+      systemMessage += `\n\nYou have access to the user's Dasha periods information, which shows the planetary periods that influence different phases of their life according to Vedic astrology. When asked about past, present, or future phases, refer to the appropriate Dasha and Antardasha (sub-period) information.`;
+    }
 
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -43,7 +60,7 @@ serve(async (req) => {
         model: 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemMessage },
-          { role: 'user', content: prompt }
+          { role: 'user', content: userMessageWithContext }
         ],
         temperature: 0.7,
         max_tokens: 500,

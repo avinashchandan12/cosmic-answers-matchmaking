@@ -28,6 +28,7 @@ const Chat = () => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [chartData, setChartData] = useState<any>(null);
+  const [dashaData, setDashaData] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Fetch previous chat messages from Supabase
@@ -73,7 +74,7 @@ const Chat = () => {
       
       try {
         // Check if we have saved chart data
-        const { data, error } = await supabase
+        const { data: birthChartData, error: birthChartError } = await supabase
           .from('saved_charts')
           .select('*')
           .eq('user_id', user.id)
@@ -81,13 +82,31 @@ const Chat = () => {
           .order('created_at', { ascending: false })
           .limit(1);
         
-        if (error) {
-          console.error('Error fetching user chart data:', error);
+        if (birthChartError) {
+          console.error('Error fetching user chart data:', birthChartError);
           return;
         }
         
-        if (data && data.length > 0) {
-          setChartData(data[0].chart_data);
+        if (birthChartData && birthChartData.length > 0) {
+          setChartData(birthChartData[0].chart_data);
+        }
+        
+        // Check if we have saved dasha data
+        const { data: dashaChartData, error: dashaChartError } = await supabase
+          .from('saved_charts')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('chart_type', 'dasha_chart')
+          .order('created_at', { ascending: false })
+          .limit(1);
+        
+        if (dashaChartError) {
+          console.error('Error fetching user dasha data:', dashaChartError);
+          return;
+        }
+        
+        if (dashaChartData && dashaChartData.length > 0) {
+          setDashaData(dashaChartData[0].chart_data);
         }
       } catch (error) {
         console.error('Error fetching user chart data:', error);
@@ -146,17 +165,21 @@ const Chat = () => {
     setInput('');
     
     try {
-      // Call our Supabase Edge Function for AI response
-      const { data, error } = await supabase.functions.invoke('astro-ai', {
+      const currentDateTime = new Date().toISOString();
+      
+      // Call the chat-ai edge function with chart data and dasha data
+      const { data, error } = await supabase.functions.invoke('chat-ai', {
         body: { 
-          question: input,
-          chartData: chartData 
+          prompt: input,
+          chartData: chartData,
+          dashaData: dashaData,
+          currentDateTime: currentDateTime
         }
       });
       
       if (error) throw error;
       
-      const aiResponse = data.answer;
+      const aiResponse = data.response;
       
       const aiMessage: Message = {
         id: Date.now().toString(),
@@ -308,8 +331,8 @@ const Chat = () => {
                 "What does my birth chart reveal about my personality?",
                 "How does my Moon sign affect my emotions?",
                 "What career paths are favorable based on my chart?",
-                "When is my next favorable period for relationships?",
-                "How can I balance the challenging aspects in my chart?"
+                "When will my current Dasha period end?",
+                "What does my current Mahadasha signify in my life?"
               ].map((question, index) => (
                 <Button
                   key={index}
