@@ -7,7 +7,6 @@ import { Loader2, MapPin } from 'lucide-react';
 import { useDebounce } from '@/hooks/use-debounce';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "@/hooks/use-toast";
-import { useIsMobile } from '@/hooks/use-mobile';
 
 export interface LocationData {
   description: string;
@@ -27,7 +26,6 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
   onLocationSelect,
   placeholder = 'Enter a location'
 }) => {
-  const isMobile = useIsMobile();
   const [inputValue, setInputValue] = useState(defaultValue);
   const [locations, setLocations] = useState<LocationData[]>([]);
   const [loading, setLoading] = useState(false);
@@ -90,58 +88,6 @@ const LocationAutocomplete: React.FC<LocationAutocompleteProps> = ({
     fetchLocations();
   }, [debouncedValue]);
 
-  // Mobile version - direct input without dropdown
-  if (isMobile) {
-    return (
-      <div className="relative w-full">
-        <Input
-          value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
-          placeholder={placeholder}
-          className="bg-white/5 border-white/20 text-white pl-10"
-          onBlur={() => {
-            // If there's a match, select it
-            if (locations.length > 0) {
-              onLocationSelect(locations[0]);
-            }
-          }}
-        />
-        <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-orange" size={16} />
-        
-        {loading && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <Loader2 className="h-4 w-4 text-orange animate-spin" />
-          </div>
-        )}
-        
-        {locations.length > 0 && (
-          <div className="mt-1 w-full bg-purple-light border border-white/20 rounded-md p-2 max-h-60 overflow-y-auto z-50">
-            {locations.map((location) => (
-              <div
-                key={location.place_id}
-                className="p-2 hover:bg-white/10 cursor-pointer rounded-md"
-                onClick={() => {
-                  setInputValue(location.description);
-                  onLocationSelect(location);
-                }}
-              >
-                <MapPin className="inline mr-2 h-4 w-4 text-orange" />
-                {location.description}
-              </div>
-            ))}
-          </div>
-        )}
-        
-        {error && locations.length === 0 && inputValue.length >= 3 && !loading && (
-          <div className="mt-1 w-full bg-purple-light border border-white/20 rounded-md p-2 text-center">
-            <p className="text-sm text-red-400">{error}</p>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  // Desktop version with Popover
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>

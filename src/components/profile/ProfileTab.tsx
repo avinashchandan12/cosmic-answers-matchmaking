@@ -5,7 +5,6 @@ import { Card } from "@/components/ui/card";
 import ProfileForm from './ProfileForm';
 import ProfileInfo from './ProfileInfo';
 import AstrologyData from './AstrologyData';
-import AstrologyLoading from './AstrologyLoading';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "@/hooks/use-toast";
 
