@@ -49,7 +49,7 @@ const ChartSelector: React.FC<ChartSelectorProps> = ({
           <ChevronDown className="ml-2 h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="bg-purple-800 border-white/20 text-white">
+      <DropdownMenuContent className="bg-purple-800 border-white/20 text-white z-50 shadow-lg">
         {chartOptions.map((chart) => (
           <DropdownMenuItem
             key={chart.id}
