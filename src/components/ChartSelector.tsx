@@ -36,8 +36,8 @@ const ChartSelector: React.FC<ChartSelectorProps> = ({ selectedChart, onSelectCh
             <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="p-0 bg-purple-dark border-white/20 text-white w-[220px] md:w-[280px] z-50">
-          <Command className="bg-purple-dark rounded-md">
+        <PopoverContent className="w-[220px] md:w-[280px] p-0 bg-purple-dark border-white/20 text-white">
+          <Command className="bg-transparent">
             <CommandGroup>
               {charts.map((chart) => (
                 <CommandItem
@@ -47,7 +47,7 @@ const ChartSelector: React.FC<ChartSelectorProps> = ({ selectedChart, onSelectCh
                     onSelectChart(chart.value);
                     setOpen(false);
                   }}
-                  className="cursor-pointer hover:bg-white/10 text-white"
+                  className="cursor-pointer hover:bg-white/10 text-white aria-selected:bg-white/10"
                 >
                   <Check
                     className={`mr-2 h-4 w-4 ${
