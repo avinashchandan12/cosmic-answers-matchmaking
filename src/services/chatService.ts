@@ -2,10 +2,15 @@
 // WARNING: This is a temporary solution. In production, API keys should not be exposed in frontend code
 const DEEPSEEK_API_KEY = 'sk-2f7075c883d44d438f0bcb14fd8b1e0e';
 
+// The direct Supabase URL for the edge function
+const SUPABASE_FUNCTION_URL = 'https://vybtxdjobjvxyyvbhyyy.supabase.co/functions/v1/chat-ai';
+
 export const getChatResponse = async (message: string) => {
   try {
+    console.log('Calling chat-ai function with message:', message);
+    
     // Using Supabase edge function instead of direct API call for better security
-    const response = await fetch(`https://vybtxdjobjvxyyvbhyyy.supabase.co/functions/v1/chat-ai`, {
+    const response = await fetch(SUPABASE_FUNCTION_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -17,7 +22,8 @@ export const getChatResponse = async (message: string) => {
     });
 
     if (!response.ok) {
-      throw new Error('Failed to get chat response');
+      console.error('Error response from chat-ai function:', response.status, response.statusText);
+      throw new Error(`Failed to get chat response: ${response.status} ${response.statusText}`);
     }
 
     const reader = response.body?.getReader();
@@ -34,6 +40,7 @@ export const getChatResponse = async (message: string) => {
       
       // Decode the chunk
       const chunk = new TextDecoder().decode(value);
+      console.log('Received chunk:', chunk);
       
       // Split by newlines (if multiple JSON objects were sent)
       const jsonStrings = chunk.split('\n').filter(str => str.trim());
@@ -44,6 +51,7 @@ export const getChatResponse = async (message: string) => {
           
           // Check for error message
           if (data.error) {
+            console.error('Error in response data:', data.error);
             throw new Error(data.error);
           }
           

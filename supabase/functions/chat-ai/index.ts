@@ -17,6 +17,9 @@ serve(async (req) => {
     const { prompt, chartData, dashaData, currentDateTime, chartType } = await req.json();
     const deepSeekApiKey = Deno.env.get('DEEPSEEK_API_KEY') || 'sk-2f7075c883d44d438f0bcb14fd8b1e0e';
     
+    console.log('chat-ai function called with prompt:', prompt);
+    console.log('Using chart type:', chartType);
+    
     if (!prompt) {
       throw new Error('Prompt is required');
     }
@@ -71,7 +74,6 @@ serve(async (req) => {
     }
 
     console.log('Calling DeepSeek API with prompt:', prompt);
-    console.log('Using chart type:', selectedChartType);
 
     // Setup streaming response
     const encoder = new TextEncoder();
@@ -79,6 +81,7 @@ serve(async (req) => {
       async start(controller) {
         try {
           // Call DeepSeek API with stream option
+          console.log('Sending request to DeepSeek API');
           const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -92,15 +95,17 @@ serve(async (req) => {
                 { role: 'user', content: userMessageWithContext }
               ],
               temperature: 0.7,
-              max_tokens: 1000,
+              max_tokens: 1500,
               stream: true,
             }),
           });
 
           if (!response.ok) {
-            const error = await response.json();
-            console.error('DeepSeek API error:', error);
-            controller.enqueue(encoder.encode(JSON.stringify({ error: error.error?.message || 'Error from DeepSeek API' })));
+            const errorData = await response.text();
+            console.error('DeepSeek API error response:', response.status, errorData);
+            controller.enqueue(encoder.encode(JSON.stringify({ 
+              error: `Error from DeepSeek API: ${response.status} ${response.statusText}` 
+            })));
             controller.close();
             return;
           }
@@ -112,6 +117,7 @@ serve(async (req) => {
             return;
           }
 
+          console.log('Got streaming response from DeepSeek API');
           const reader = response.body.getReader();
           let fullText = '';
 
@@ -122,6 +128,7 @@ serve(async (req) => {
             
             // Convert the chunk to text
             const chunk = new TextDecoder().decode(value);
+            console.log('Received chunk from DeepSeek');
             
             // Process each line in the chunk (DeepSeek sends multiple "data: {}" lines)
             const lines = chunk.split('\n').filter(line => line.trim() !== '');
@@ -143,7 +150,7 @@ serve(async (req) => {
                   controller.enqueue(encoder.encode(JSON.stringify({ 
                     delta: content, 
                     fullResponse: fullText 
-                  })));
+                  }) + '\n'));
                 }
               } catch (e) {
                 console.error('Error parsing DeepSeek API chunk:', e, jsonStr);
@@ -155,7 +162,7 @@ serve(async (req) => {
           controller.enqueue(encoder.encode(JSON.stringify({ 
             response: fullText, 
             done: true 
-          })));
+          }) + '\n'));
           console.log('Successfully streamed complete response from DeepSeek');
         } catch (error) {
           console.error('Error in streaming chat response:', error);
