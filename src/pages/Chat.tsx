@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -14,7 +15,6 @@ interface Message {
   text: string;
   sender: 'user' | 'ai';
   timestamp: Date;
-  isStreaming?: boolean;
 }
 
 const Chat = () => {
@@ -36,8 +36,8 @@ const Chat = () => {
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const currentStreamingMessage = useRef<string | null>(null);
 
+  // Fetch previous chat messages from Supabase
   useEffect(() => {
     const fetchChatHistory = async () => {
       if (!user) return;
@@ -62,6 +62,7 @@ const Chat = () => {
             timestamp: new Date(msg.created_at)
           }));
           
+          // Keep the welcome message at the top
           setMessages([messages[0], ...formattedMessages]);
         }
       } catch (error) {
@@ -72,11 +73,13 @@ const Chat = () => {
     fetchChatHistory();
   }, [user]);
 
+  // Fetch user's chart data if available
   useEffect(() => {
     const fetchUserChartData = async () => {
       if (!user) return;
       
       try {
+        // Check if we have saved birth chart data
         const { data: birthChartData, error: birthChartError } = await supabase
           .from('saved_charts')
           .select('*')
@@ -94,6 +97,7 @@ const Chat = () => {
           setChartData(birthChartData[0].chart_data);
         }
         
+        // Check if we have saved dasha data
         const { data: dashaChartData, error: dashaChartError } = await supabase
           .from('saved_charts')
           .select('*')
@@ -111,6 +115,7 @@ const Chat = () => {
           setDashaData(dashaChartData[0].chart_data);
         }
         
+        // Fetch all available divisional charts
         const { data: allCharts, error: allChartsError } = await supabase
           .from('saved_charts')
           .select('*')
@@ -127,6 +132,7 @@ const Chat = () => {
           const chartsData: Record<string, any> = {};
           
           allCharts.forEach(chart => {
+            // Extract the chart type (D1, D9, etc.) from the chart_type field
             const chartTypeMatch = chart.chart_type.match(/^([^_]+)/);
             if (chartTypeMatch) {
               const chartType = chartTypeMatch[1].toUpperCase();
@@ -177,6 +183,7 @@ const Chat = () => {
     
     setLoading(true);
     
+    // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       text: input,
@@ -186,6 +193,7 @@ const Chat = () => {
     
     setMessages(prev => [...prev, userMessage]);
     
+    // Save user message to Supabase
     await saveMessage(input, false);
     
     setInput('');
@@ -193,142 +201,39 @@ const Chat = () => {
     try {
       const currentDateTime = new Date().toISOString();
       
+      // Determine which chart data to send based on the selected chart type
       const selectedChartData = selectedChartType === 'D1' 
         ? chartData 
         : divisionalCharts[selectedChartType] || chartData;
       
-      const placeholderId = Date.now() + 1000;
-      const placeholderMessage: Message = {
-        id: placeholderId.toString(),
-        text: "",
-        sender: 'ai',
-        timestamp: new Date(),
-        isStreaming: true
-      };
-      
-      setMessages(prev => [...prev, placeholderMessage]);
-      currentStreamingMessage.current = placeholderId.toString();
-      
-      console.log('Sending request to chat service with:', {
-        input,
-        chartType: selectedChartType,
-        hasChartData: !!selectedChartData,
-        hasDashaData: !!dashaData
+      // Call the chat-ai edge function with chart data, dasha data and selected chart type
+      const { data, error } = await supabase.functions.invoke('chat-ai', {
+        body: { 
+          prompt: input,
+          chartData: selectedChartData,
+          dashaData: dashaData,
+          currentDateTime: currentDateTime,
+          chartType: selectedChartType
+        }
       });
       
-      try {
-        const response = await fetch('https://vybtxdjobjvxyyvbhyyy.supabase.co/functions/v1/chat-ai', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token || ''}`
-          },
-          body: JSON.stringify({ 
-            prompt: input,
-            chartData: selectedChartData,
-            dashaData: dashaData,
-            currentDateTime: currentDateTime,
-            chartType: selectedChartType
-          })
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to get chat response: ${response.status} ${response.statusText}`);
-        }
-        
-        const reader = response.body?.getReader();
-        if (!reader) {
-          throw new Error('No response stream available');
-        }
-        
-        let streamedText = '';
-        
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          
-          const chunk = new TextDecoder().decode(value);
-          console.log('Received chunk:', chunk);
-          
-          const jsonStrings = chunk.split('\n').filter(str => str.trim());
-          
-          for (const jsonStr of jsonStrings) {
-            try {
-              const data = JSON.parse(jsonStr);
-              
-              if (data.error) {
-                console.error('Error in streaming data:', data.error);
-                throw new Error(data.error);
-              }
-              
-              if (data.delta || data.fullResponse) {
-                if (data.fullResponse) {
-                  streamedText = data.fullResponse;
-                } else if (data.delta) {
-                  streamedText += data.delta;
-                }
-                
-                setMessages(prev => prev.map(msg => {
-                  if (msg.id === currentStreamingMessage.current) {
-                    return {
-                      ...msg,
-                      text: streamedText,
-                      isStreaming: true
-                    };
-                  }
-                  return msg;
-                }));
-              }
-              
-              if (data.response || data.done) {
-                const finalText = data.response || data.fullResponse || streamedText;
-                
-                setMessages(prev => prev.map(msg => {
-                  if (msg.id === currentStreamingMessage.current) {
-                    return {
-                      ...msg,
-                      text: finalText,
-                      isStreaming: false
-                    };
-                  }
-                  return msg;
-                }));
-                
-                await saveMessage(finalText, true);
-                currentStreamingMessage.current = null;
-              }
-            } catch (error) {
-              console.error('Error parsing chunk:', error, jsonStr);
-            }
-          }
-        }
-      } catch (error) {
-        throw error;
-      }
+      if (error) throw error;
+      
+      const aiResponse = data.response;
+      
+      const aiMessage: Message = {
+        id: Date.now().toString(),
+        text: aiResponse,
+        sender: 'ai',
+        timestamp: new Date()
+      };
+      
+      setMessages(prev => [...prev, aiMessage]);
+      
+      // Save AI response to Supabase
+      await saveMessage(aiResponse, true);
     } catch (error) {
       console.error('Error calling AI function:', error);
-      
-      if (currentStreamingMessage.current) {
-        setMessages(prev => prev.map(msg => {
-          if (msg.id === currentStreamingMessage.current) {
-            return {
-              ...msg,
-              text: "Failed to generate a response. Please try again.",
-              isStreaming: false
-            };
-          }
-          return msg;
-        }));
-        currentStreamingMessage.current = null;
-      } else {
-        setMessages(prev => [...prev, {
-          id: Date.now().toString(),
-          text: "Failed to generate a response. Please try again.",
-          sender: 'ai',
-          timestamp: new Date()
-        }]);
-      }
-      
       toast({
         title: "Error",
         description: "Failed to generate a response. Please try again.",
@@ -353,6 +258,7 @@ const Chat = () => {
   const handleChartTypeChange = (chartType: string) => {
     setSelectedChartType(chartType);
     
+    // Add a system message indicating chart type change
     const systemMessage: Message = {
       id: Date.now().toString(),
       text: `Switched to ${chartType} chart. You can now ask questions specific to this chart type.`,
@@ -369,16 +275,20 @@ const Chat = () => {
     try {
       setPdfGenerating(true);
       
+      // Create a clone of the chat container to modify for PDF
       const chatElement = chatContainerRef.current.cloneNode(true) as HTMLElement;
       
+      // Remove any buttons or interactive elements from the PDF
       const buttons = chatElement.querySelectorAll('button');
       buttons.forEach(button => button.remove());
       
+      // Apply PDF-specific styling
       chatElement.style.backgroundColor = '#ffffff';
       chatElement.style.color = '#000000';
       chatElement.style.padding = '20px';
       chatElement.style.borderRadius = '0';
       
+      // Add title and header
       const header = document.createElement('div');
       header.innerHTML = `
         <h1 style="text-align: center; color: #6d28d9; font-size: 24px; margin-bottom: 20px;">
@@ -392,6 +302,7 @@ const Chat = () => {
       
       chatElement.insertBefore(header, chatElement.firstChild);
       
+      // Set options for the PDF
       const opt = {
         margin: [10, 10, 10, 10],
         filename: 'astromatch-chat-export.pdf',
@@ -400,6 +311,7 @@ const Chat = () => {
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
       
+      // Generate the PDF
       await html2pdf().from(chatElement).set(opt).save();
       
       toast({
@@ -418,7 +330,9 @@ const Chat = () => {
     }
   };
 
-  const formatAiMessage = (text: string, isStreaming?: boolean) => {
+  // Function to parse and format AI responses
+  const formatAiMessage = (text: string) => {
+    // Replace markdown-style headers with styled elements
     const withHeaders = text.replace(/(?:^|\n)(#{1,6})\s+(.+)/g, (match, hashes, content) => {
       const level = hashes.length;
       const sizeClasses = [
@@ -432,16 +346,21 @@ const Chat = () => {
       return `<div class="${sizeClasses[level-1]} mt-2 mb-1">${content}</div>`;
     });
 
+    // Replace markdown-style lists with HTML lists
     const withLists = withHeaders.replace(/(?:^|\n)(\d+\.\s+)(.+)/g, '<li class="ml-5">$2</li>')
       .replace(/(?:^|\n)(\*|\-)\s+(.+)/g, '<li class="ml-5">$2</li>');
 
+    // Replace markdown-style bold with HTML bold
     const withBold = withLists.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
 
+    // Replace markdown-style italic with HTML italic
     const withItalic = withBold.replace(/\_(.+?)\_/g, '<em>$1</em>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>');
 
+    // Replace markdown-style horizontal lines
     const withHorizontalLines = withItalic.replace(/(?:^|\n)---(?:\n|$)/g, '<hr class="my-2 border-white/20" />');
 
+    // Replace newlines with proper breaks
     const formatted = withHorizontalLines
       .replace(/\n\n/g, '<br /><br />')
       .replace(/\n/g, '<br />');
@@ -500,6 +419,7 @@ const Chat = () => {
               )}
             </div>
             
+            {/* Messages container */}
             <div 
               ref={chatContainerRef} 
               className="flex-1 overflow-y-auto mb-4 space-y-4 pr-2"
@@ -523,19 +443,15 @@ const Chat = () => {
                         <User className="text-white mr-2" size={16} />
                       )}
                       <span className="text-xs opacity-70">{formatTime(message.timestamp)}</span>
-                      {message.isStreaming && (
-                        <span className="ml-2">
-                          <Loader2 size={14} className="animate-spin text-orange inline" />
-                        </span>
-                      )}
                     </div>
-                    {message.sender === 'ai' ? formatAiMessage(message.text, message.isStreaming) : <p className="text-white">{message.text}</p>}
+                    {message.sender === 'ai' ? formatAiMessage(message.text) : <p className="text-white">{message.text}</p>}
                   </div>
                 </div>
               ))}
               <div ref={messagesEndRef} />
             </div>
             
+            {/* Input area */}
             <div className="relative">
               <textarea
                 value={input}
