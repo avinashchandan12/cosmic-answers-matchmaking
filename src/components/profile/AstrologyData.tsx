@@ -1,11 +1,13 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from 'react-router-dom';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 interface AstrologyDataProps {
   birthDate?: string;
@@ -33,6 +35,8 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
   const { user } = useAuth();
   const [chartData, setChartData] = useState<ChartData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<any>(null);
   
   useEffect(() => {
     if (birthDate && birthTime && birthPlaceLat && birthPlaceLng && user) {
@@ -47,6 +51,8 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
     
     try {
       setLoading(true);
+      setError(null);
+      setDebugInfo(null);
       
       const { data: savedCharts, error: fetchError } = await supabase
         .from('saved_charts')
@@ -69,22 +75,41 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
       const [year, month, day] = birthDate.split('-').map(Number);
       const [hours, minutes] = birthTime.split(':').map(Number);
       
+      const requestData = {
+        year,
+        month,
+        date: day,
+        hours,
+        minutes,
+        seconds: 0,
+        latitude: birthPlaceLat,
+        longitude: birthPlaceLng,
+        timezone: new Date().getTimezoneOffset() / -60 // Convert minutes to hours and invert
+      };
+      
+      console.log('Sending birth chart request with data:', requestData);
+      
       const { data, error } = await supabase.functions.invoke('birth-chart', {
-        body: {
-          year,
-          month,
-          date: day,
-          hours,
-          minutes,
-          seconds: 0,
-          latitude: birthPlaceLat,
-          longitude: birthPlaceLng
-        }
+        body: requestData
       });
       
       if (error) {
         console.error('Error fetching birth chart:', error);
+        setDebugInfo({
+          error: error,
+          requestData: requestData
+        });
         throw error;
+      }
+      
+      if (data && data.error) {
+        console.error('Error in birth chart response:', data.error);
+        setDebugInfo({
+          responseError: data.error,
+          details: data.details || data.rawResponse,
+          requestData: requestData
+        });
+        throw new Error(data.error);
       }
       
       const { error: saveError } = await supabase
@@ -101,8 +126,9 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
       
       processChartData(data);
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in chart calculation:', error);
+      setError(error.message || 'Unable to calculate your astrological chart');
       toast({
         title: "Chart Error",
         description: "Unable to calculate your astrological chart. Please try again later.",
@@ -151,12 +177,17 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
       });
     } catch (error) {
       console.error('Error processing chart data:', error);
+      setError('Unable to process your chart data');
       toast({
         title: "Processing Error",
         description: "Unable to process your chart data. Please try again later.",
         variant: "destructive"
       });
     }
+  };
+  
+  const handleRetry = () => {
+    fetchChartData();
   };
   
   if (loading) {
@@ -179,6 +210,40 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
         >
           Complete Profile
         </Button>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <h2 className="text-2xl font-semibold mb-4 text-orange">Your Astrological Data</h2>
+        
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>
+            {error}
+          </AlertDescription>
+        </Alert>
+        
+        <div className="text-center mt-4">
+          <Button 
+            onClick={handleRetry}
+            className="bg-purple-light hover:bg-purple-light/90 text-white"
+          >
+            Try Again
+          </Button>
+        </div>
+        
+        {debugInfo && (
+          <div className="mt-6 p-4 border border-white/10 rounded-md bg-black/20">
+            <h3 className="text-sm font-medium text-white/70 mb-2">Debug Information</h3>
+            <pre className="text-xs text-white/60 overflow-auto max-h-40">
+              {JSON.stringify(debugInfo, null, 2)}
+            </pre>
+          </div>
+        )}
       </div>
     );
   }

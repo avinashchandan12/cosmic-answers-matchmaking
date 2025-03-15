@@ -17,25 +17,42 @@ serve(async (req) => {
     const ASTRO_API_KEY = Deno.env.get('ASTRO_API_KEY');
     
     if (!ASTRO_API_KEY) {
-      throw new Error('Astrology API key is not set');
+      console.error('ASTRO_API_KEY is not set');
+      return new Response(
+        JSON.stringify({ error: 'Astrology API key is not set' }),
+        { 
+          status: 200, // Return 200 even for config errors
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
 
     const data = await req.json();
+    console.log('Received birth chart request with data:', JSON.stringify(data));
+    
     const { year, month, date, hours, minutes, seconds, latitude, longitude, timezone } = data;
     
     // Validate required parameters
     if (!year || !month || !date || hours === undefined || minutes === undefined || 
         seconds === undefined || !latitude || !longitude || timezone === undefined) {
+      console.error('Missing required parameters:', JSON.stringify(data));
       return new Response(
-        JSON.stringify({ error: 'Missing required parameters' }),
+        JSON.stringify({ 
+          error: 'Missing required parameters',
+          params: { year, month, date, hours, minutes, seconds, latitude, longitude, timezone }
+        }),
         { 
-          status: 400,
+          status: 200, // Return 200 even for validation errors
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
     }
 
     // Call the Astrology API
+    console.log('Calling astrology API with params:', JSON.stringify({
+      year, month, date, hours, minutes, seconds, latitude, longitude, timezone
+    }));
+    
     const apiResponse = await fetch('https://json.apiastro.com/planets/extended', {
       method: 'POST',
       headers: {
@@ -47,12 +64,41 @@ serve(async (req) => {
       })
     });
 
+    const responseStatus = apiResponse.status;
+    const responseText = await apiResponse.text();
+    console.log(`API response status: ${responseStatus}`);
+    
     if (!apiResponse.ok) {
-      const errorText = await apiResponse.text();
-      throw new Error(`API error: ${apiResponse.status} - ${errorText}`);
+      console.error(`API error (${responseStatus}): ${responseText}`);
+      return new Response(
+        JSON.stringify({ 
+          error: `API error: ${responseStatus}`,
+          details: responseText
+        }),
+        { 
+          status: 200, // Return 200 even for API errors
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
     }
 
-    const chartData = await apiResponse.json();
+    let chartData;
+    try {
+      chartData = JSON.parse(responseText);
+      console.log('Successfully parsed chart data');
+    } catch (parseError) {
+      console.error('Error parsing API response:', parseError);
+      return new Response(
+        JSON.stringify({ 
+          error: 'Error parsing API response',
+          rawResponse: responseText
+        }),
+        { 
+          status: 200, // Return 200 even for parsing errors
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
     
     return new Response(
       JSON.stringify(chartData),
@@ -61,9 +107,12 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in birth-chart function:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        stack: error.stack
+      }),
       { 
-        status: 500,
+        status: 200, // Return 200 even for unexpected errors
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       }
     );
