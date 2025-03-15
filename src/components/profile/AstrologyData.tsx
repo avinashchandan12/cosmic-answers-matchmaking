@@ -89,42 +89,64 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
       
       console.log('Sending birth chart request with data:', requestData);
       
-      const { data, error } = await supabase.functions.invoke('birth-chart', {
+      // Fetch birth chart data
+      const { data: planetData, error: planetError } = await supabase.functions.invoke('birth-chart', {
         body: requestData
       });
       
-      if (error) {
-        console.error('Error fetching birth chart:', error);
+      if (planetError) {
+        console.error('Error fetching birth chart:', planetError);
         setDebugInfo({
-          error: error,
+          error: planetError,
           requestData: requestData
         });
-        throw error;
+        throw planetError;
       }
       
-      if (data && data.error) {
-        console.error('Error in birth chart response:', data.error);
+      if (planetData && planetData.error) {
+        console.error('Error in birth chart response:', planetData.error);
         setDebugInfo({
-          responseError: data.error,
-          details: data.details || data.rawResponse,
+          responseError: planetData.error,
+          details: planetData.details || planetData.rawResponse,
           requestData: requestData
         });
-        throw new Error(data.error);
+        throw new Error(planetData.error);
       }
+      
+      // Fetch dasha data
+      const dashaRequestData = {
+        ...requestData,
+        endpoint: 'vimsottari/maha-dasas-and-antar-dasas'
+      };
+      
+      const { data: dashaData, error: dashaError } = await supabase.functions.invoke('birth-chart', {
+        body: dashaRequestData
+      });
+      
+      if (dashaError) {
+        console.error('Error fetching dasha data:', dashaError);
+        // Don't fail completely if dasha data fetch fails
+      }
+      
+      // Combine planetary and dasha data
+      const combinedData = {
+        planets: planetData,
+        dashas: dashaData
+      };
       
       const { error: saveError } = await supabase
         .from('saved_charts')
         .insert({
           user_id: user?.id,
           chart_type: 'birth_chart',
-          chart_data: data
+          chart_data: combinedData
         });
       
       if (saveError) {
         console.error('Error saving chart data:', saveError);
       }
       
-      processChartData(data);
+      processChartData(combinedData);
       
     } catch (error: any) {
       console.error('Error in chart calculation:', error);
@@ -146,27 +168,51 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
     let currentDasha = "Unknown";
     
     try {
-      if (data.houses) {
-        const ascendantHouse = data.houses.find((house: any) => house.house_number === 1);
-        if (ascendantHouse) {
-          ascendant = ascendantHouse.sign;
-        }
-      }
-      
-      if (data.planets) {
-        const moon = data.planets.find((planet: any) => planet.name === "Moon");
-        if (moon) {
-          moonSign = moon.sign;
+      // Process planet data
+      if (data.planets && data.planets.statusCode === 200 && data.planets.output) {
+        const planetOutput = data.planets.output;
+        
+        if (planetOutput.Ascendant) {
+          ascendant = planetOutput.Ascendant.zodiac_sign_name;
         }
         
-        const sun = data.planets.find((planet: any) => planet.name === "Sun");
-        if (sun) {
-          sunSign = sun.sign;
+        if (planetOutput.Moon) {
+          moonSign = planetOutput.Moon.zodiac_sign_name;
+        }
+        
+        if (planetOutput.Sun) {
+          sunSign = planetOutput.Sun.zodiac_sign_name;
         }
       }
       
-      if (data.dashas && data.dashas.current) {
-        currentDasha = `${data.dashas.current.maha_dasha} - ${data.dashas.current.antar_dasha}`;
+      // Process dasha data
+      if (data.dashas && data.dashas.statusCode === 200 && data.dashas.output) {
+        let dashaOutput;
+        try {
+          // The API returns a stringified JSON for dasha data
+          if (typeof data.dashas.output === 'string') {
+            dashaOutput = JSON.parse(data.dashas.output);
+          } else {
+            dashaOutput = data.dashas.output;
+          }
+          
+          const today = new Date();
+          
+          // Find current dasha
+          for (const [mahaDasha, antarDashas] of Object.entries(dashaOutput)) {
+            for (const [antarDasha, dateRange] of Object.entries(antarDashas as Record<string, { start_time: string, end_time: string }>)) {
+              const startDate = new Date(dateRange.start_time);
+              const endDate = new Date(dateRange.end_time);
+              
+              if (today >= startDate && today <= endDate) {
+                currentDasha = `${mahaDasha} - ${antarDasha}`;
+                break;
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error parsing dasha data:', error);
+        }
       }
       
       setChartData({

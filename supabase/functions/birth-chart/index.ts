@@ -30,7 +30,8 @@ serve(async (req) => {
     const data = await req.json();
     console.log('Received birth chart request with data:', JSON.stringify(data));
     
-    const { year, month, date, hours, minutes, seconds, latitude, longitude, timezone } = data;
+    const { year, month, date, hours, minutes, seconds, latitude, longitude, timezone, endpoint } = data;
+    const apiEndpoint = endpoint || 'planets/extended'; // Default to planets/extended if not specified
     
     // Validate required parameters
     if (!year || !month || !date || hours === undefined || minutes === undefined || 
@@ -49,11 +50,11 @@ serve(async (req) => {
     }
 
     // Call the Astrology API
-    console.log('Calling astrology API with params:', JSON.stringify({
+    console.log(`Calling astrology API with endpoint ${apiEndpoint} and params:`, JSON.stringify({
       year, month, date, hours, minutes, seconds, latitude, longitude, timezone
     }));
     
-    const apiResponse = await fetch('https://json.apiastro.com/planets/extended', {
+    const apiResponse = await fetch(`https://json.apiastro.com/${apiEndpoint}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
