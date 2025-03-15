@@ -59,7 +59,7 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
       
       if (result.error) {
         setError(result.error);
-        setDebugInfo(result.debugInfo);
+        setDebugInfo(result.debugInfo || null);
         toast({
           title: "Chart Error",
           description: "Unable to calculate your astrological chart. Please try again later.",

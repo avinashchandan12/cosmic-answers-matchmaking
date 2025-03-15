@@ -26,7 +26,7 @@ export const fetchBirthChart = async (
   birthTime: string,
   birthPlaceLat: number | null,
   birthPlaceLng: number | null
-): Promise<{ data: any; error: string | null }> => {
+): Promise<{ data: any; error: string | null; debugInfo?: any }> => {
   try {
     // Check if chart is already saved in database
     const { data: savedCharts, error: fetchError } = await supabase

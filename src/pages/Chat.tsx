@@ -192,6 +192,44 @@ const Chat = () => {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  // Function to parse and format AI responses
+  const formatAiMessage = (text: string) => {
+    // Replace markdown-style headers with styled elements
+    const withHeaders = text.replace(/(?:^|\n)(#{1,6})\s+(.+)/g, (match, hashes, content) => {
+      const level = hashes.length;
+      const sizeClasses = [
+        'text-xl font-bold',
+        'text-lg font-bold',
+        'text-base font-bold',
+        'text-sm font-bold',
+        'text-xs font-bold',
+        'text-xs font-semibold'
+      ];
+      return `<div class="${sizeClasses[level-1]} mt-2 mb-1">${content}</div>`;
+    });
+
+    // Replace markdown-style lists with HTML lists
+    const withLists = withHeaders.replace(/(?:^|\n)(\d+\.\s+)(.+)/g, '<li class="ml-5">$2</li>')
+      .replace(/(?:^|\n)(\*|\-)\s+(.+)/g, '<li class="ml-5">$2</li>');
+
+    // Replace markdown-style bold with HTML bold
+    const withBold = withLists.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+    // Replace markdown-style italic with HTML italic
+    const withItalic = withBold.replace(/\_(.+?)\_/g, '<em>$1</em>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+    // Replace markdown-style horizontal lines
+    const withHorizontalLines = withItalic.replace(/(?:^|\n)---(?:\n|$)/g, '<hr class="my-2 border-white/20" />');
+
+    // Replace newlines with proper breaks
+    const formatted = withHorizontalLines
+      .replace(/\n\n/g, '<br /><br />')
+      .replace(/\n/g, '<br />');
+
+    return <div dangerouslySetInnerHTML={{ __html: formatted }} />;
+  };
+
   return (
     <div className="min-h-screen bg-purple-background text-white">
       <Navigation />
@@ -235,7 +273,7 @@ const Chat = () => {
                       )}
                       <span className="text-xs opacity-70">{formatTime(message.timestamp)}</span>
                     </div>
-                    <p className="text-white">{message.text}</p>
+                    {message.sender === 'ai' ? formatAiMessage(message.text) : <p className="text-white">{message.text}</p>}
                   </div>
                 </div>
               ))}
