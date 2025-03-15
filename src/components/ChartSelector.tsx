@@ -37,28 +37,27 @@ const ChartSelector: React.FC<ChartSelectorProps> = ({ selectedChart, onSelectCh
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[220px] md:w-[280px] p-0 bg-purple-dark border-white/20 text-white">
-          <Command className="bg-transparent">
-            <CommandGroup>
-              {charts.map((chart) => (
-                <CommandItem
-                  key={chart.value}
-                  value={chart.value}
-                  onSelect={() => {
-                    onSelectChart(chart.value);
-                    setOpen(false);
-                  }}
-                  className="cursor-pointer hover:bg-white/10 text-white aria-selected:bg-white/10"
-                >
-                  <Check
-                    className={`mr-2 h-4 w-4 ${
-                      selectedChart === chart.value ? "opacity-100 text-orange" : "opacity-0"
-                    }`}
-                  />
-                  {chart.label}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </Command>
+          <div className="rounded-md overflow-hidden">
+            {charts.map((chart) => (
+              <div
+                key={chart.value}
+                onClick={() => {
+                  onSelectChart(chart.value);
+                  setOpen(false);
+                }}
+                className={`px-2 py-1.5 text-sm cursor-pointer hover:bg-white/10 text-white flex items-center ${
+                  selectedChart === chart.value ? "bg-white/10" : ""
+                }`}
+              >
+                <Check
+                  className={`mr-2 h-4 w-4 ${
+                    selectedChart === chart.value ? "opacity-100 text-orange" : "opacity-0"
+                  }`}
+                />
+                {chart.label}
+              </div>
+            ))}
+          </div>
         </PopoverContent>
       </Popover>
     </div>
