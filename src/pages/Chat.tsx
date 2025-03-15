@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,6 +14,7 @@ interface Message {
   text: string;
   sender: 'user' | 'ai';
   timestamp: Date;
+  isStreaming?: boolean;
 }
 
 const Chat = () => {
@@ -36,6 +36,7 @@ const Chat = () => {
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const currentStreamingMessage = useRef<string | null>(null);
 
   // Fetch previous chat messages from Supabase
   useEffect(() => {
@@ -206,34 +207,129 @@ const Chat = () => {
         ? chartData 
         : divisionalCharts[selectedChartType] || chartData;
       
-      // Call the chat-ai edge function with chart data, dasha data and selected chart type
-      const { data, error } = await supabase.functions.invoke('chat-ai', {
-        body: { 
+      // Create a placeholder message for streaming
+      const placeholderId = Date.now() + 1000;
+      const placeholderMessage: Message = {
+        id: placeholderId.toString(),
+        text: "",
+        sender: 'ai',
+        timestamp: new Date(),
+        isStreaming: true
+      };
+      
+      setMessages(prev => [...prev, placeholderMessage]);
+      currentStreamingMessage.current = placeholderId.toString();
+      
+      // Call the chat-ai edge function with streaming
+      const response = await fetch(`${window.location.origin}/functions/v1/chat-ai`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabase.auth.getSession() ? (await supabase.auth.getSession()).data.session?.access_token : ''}`
+        },
+        body: JSON.stringify({ 
           prompt: input,
           chartData: selectedChartData,
           dashaData: dashaData,
           currentDateTime: currentDateTime,
           chartType: selectedChartType
-        }
+        })
       });
       
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error('Failed to get chat response');
+      }
       
-      const aiResponse = data.response;
+      // Create a reader to read the stream
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No response stream available');
+      }
       
-      const aiMessage: Message = {
-        id: Date.now().toString(),
-        text: aiResponse,
-        sender: 'ai',
-        timestamp: new Date()
-      };
-      
-      setMessages(prev => [...prev, aiMessage]);
-      
-      // Save AI response to Supabase
-      await saveMessage(aiResponse, true);
+      // Read the stream
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        // Decode the chunk
+        const chunk = new TextDecoder().decode(value);
+        
+        // Split by newlines (if multiple JSON objects were sent)
+        const jsonStrings = chunk.split('\n').filter(str => str.trim());
+        
+        for (const jsonStr of jsonStrings) {
+          try {
+            const data = JSON.parse(jsonStr);
+            
+            // Check for error message
+            if (data.error) {
+              throw new Error(data.error);
+            }
+            
+            // Handle streaming updates
+            if (data.delta || data.fullResponse) {
+              setMessages(prev => prev.map(msg => {
+                if (msg.id === currentStreamingMessage.current) {
+                  return {
+                    ...msg,
+                    text: data.fullResponse || (msg.text + (data.delta || '')),
+                    isStreaming: true
+                  };
+                }
+                return msg;
+              }));
+            }
+            
+            // Handle complete response
+            if (data.response || data.done) {
+              const finalText = data.response || data.fullResponse || '';
+              
+              setMessages(prev => prev.map(msg => {
+                if (msg.id === currentStreamingMessage.current) {
+                  return {
+                    ...msg,
+                    text: finalText,
+                    isStreaming: false
+                  };
+                }
+                return msg;
+              }));
+              
+              // Save AI response to Supabase once it's complete
+              await saveMessage(finalText, true);
+              currentStreamingMessage.current = null;
+            }
+          } catch (error) {
+            console.error('Error parsing chunk:', error, jsonStr);
+          }
+        }
+      }
     } catch (error) {
       console.error('Error calling AI function:', error);
+      
+      // Update the streaming message to show an error
+      if (currentStreamingMessage.current) {
+        setMessages(prev => prev.map(msg => {
+          if (msg.id === currentStreamingMessage.current) {
+            return {
+              ...msg,
+              text: "Failed to generate a response. Please try again.",
+              isStreaming: false
+            };
+          }
+          return msg;
+        }));
+        currentStreamingMessage.current = null;
+      } else {
+        // Add an error message if there's no streaming message
+        setMessages(prev => [...prev, {
+          id: Date.now().toString(),
+          text: "Failed to generate a response. Please try again.",
+          sender: 'ai',
+          timestamp: new Date()
+        }]);
+      }
+      
       toast({
         title: "Error",
         description: "Failed to generate a response. Please try again.",
@@ -331,7 +427,7 @@ const Chat = () => {
   };
 
   // Function to parse and format AI responses
-  const formatAiMessage = (text: string) => {
+  const formatAiMessage = (text: string, isStreaming?: boolean) => {
     // Replace markdown-style headers with styled elements
     const withHeaders = text.replace(/(?:^|\n)(#{1,6})\s+(.+)/g, (match, hashes, content) => {
       const level = hashes.length;
@@ -443,8 +539,13 @@ const Chat = () => {
                         <User className="text-white mr-2" size={16} />
                       )}
                       <span className="text-xs opacity-70">{formatTime(message.timestamp)}</span>
+                      {message.isStreaming && (
+                        <span className="ml-2">
+                          <Loader2 size={14} className="animate-spin text-orange inline" />
+                        </span>
+                      )}
                     </div>
-                    {message.sender === 'ai' ? formatAiMessage(message.text) : <p className="text-white">{message.text}</p>}
+                    {message.sender === 'ai' ? formatAiMessage(message.text, message.isStreaming) : <p className="text-white">{message.text}</p>}
                   </div>
                 </div>
               ))}

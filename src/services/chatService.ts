@@ -22,7 +22,7 @@ export const getChatResponse = async (message: string) => {
             content: message
           }
         ],
-        max_tokens: 500,
+        max_tokens: 1000,
         temperature: 0.7,
       }),
     });
