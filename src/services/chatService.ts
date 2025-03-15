@@ -5,7 +5,7 @@ const DEEPSEEK_API_KEY = 'sk-2f7075c883d44d438f0bcb14fd8b1e0e';
 export const getChatResponse = async (message: string) => {
   try {
     // Using Supabase edge function instead of direct API call for better security
-    const response = await fetch(`${window.location.origin}/functions/v1/chat-ai`, {
+    const response = await fetch(`https://vybtxdjobjvxyyvbhyyy.supabase.co/functions/v1/chat-ai`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
