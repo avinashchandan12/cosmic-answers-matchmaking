@@ -4,6 +4,7 @@ const DEEPSEEK_API_KEY = 'sk-2f7075c883d44d438f0bcb14fd8b1e0e';
 
 export const getChatResponse = async (message: string, onChunk: (chunk: string) => void) => {
   try {
+    console.log('Starting chat request with streaming');
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -40,12 +41,18 @@ export const getChatResponse = async (message: string, onChunk: (chunk: string) 
     let accumulatedResponse = '';
     const decoder = new TextDecoder();
     
+    console.log('Starting to read stream');
+    
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done) {
+        console.log('Stream complete');
+        break;
+      }
       
       // Decode the chunk
       const chunk = decoder.decode(value, { stream: true });
+      console.log('Received chunk:', chunk);
       
       // Process the chunk (split by lines and parse each as JSON)
       const lines = chunk.split('\n').filter(line => line.trim() !== '');
@@ -61,6 +68,7 @@ export const getChatResponse = async (message: string, onChunk: (chunk: string) 
           if (parsed.choices && parsed.choices[0]?.delta?.content) {
             const content = parsed.choices[0].delta.content;
             accumulatedResponse += content;
+            console.log('Sending chunk to UI:', content);
             onChunk(content); // Call the callback with just the new content
           }
         } catch (e) {

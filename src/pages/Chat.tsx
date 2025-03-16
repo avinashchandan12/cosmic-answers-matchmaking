@@ -191,7 +191,9 @@ const Chat = () => {
     setInput('');
     
     try {
+      console.log('Creating AI message with streaming');
       const aiMessageId = (Date.now() + 1).toString();
+      
       const aiMessage: Message = {
         id: aiMessageId,
         text: '',
@@ -203,15 +205,20 @@ const Chat = () => {
       setMessages(prev => [...prev, aiMessage]);
       
       const handleStreamChunk = (chunk: string) => {
+        console.log('Received chunk:', chunk);
         setMessages(prev => prev.map(msg => 
           msg.id === aiMessageId 
             ? { ...msg, text: msg.text + chunk } 
             : msg
         ));
-        scrollToBottom();
+        
+        if (messagesEndRef.current) {
+          messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+        }
       };
       
       const fullResponse = await getChatResponse(input, handleStreamChunk);
+      console.log('Full response received:', fullResponse);
       
       setMessages(prev => prev.map(msg => 
         msg.id === aiMessageId 

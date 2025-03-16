@@ -75,6 +75,8 @@ serve(async (req) => {
 
     // If streaming is requested, handle it through a streaming response
     if (stream) {
+      console.log('Stream requested, setting up streaming response');
+      
       const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -114,12 +116,23 @@ serve(async (req) => {
         const decoder = new TextDecoder();
         
         try {
+          console.log('Starting to read stream from DeepSeek');
+          let chunk_count = 0;
+          
           while (true) {
             const { done, value } = await reader.read();
-            if (done) break;
+            if (done) {
+              console.log('Stream complete');
+              break;
+            }
             
             // Decode the chunk
             const chunk = decoder.decode(value, { stream: true });
+            chunk_count++;
+            
+            if (chunk_count % 10 === 0) {
+              console.log('Received chunk from DeepSeek');
+            }
             
             // Process the chunk (split by lines and parse each as JSON)
             const lines = chunk.split('\n').filter(line => line.trim() !== '');
