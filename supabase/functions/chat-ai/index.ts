@@ -14,7 +14,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, chartData, dashaData, currentDateTime, chartType } = await req.json();
+    const { prompt, chartData, dashaData, currentDateTime, chartType, stream } = await req.json();
     const deepSeekApiKey = Deno.env.get('DEEPSEEK_API_KEY') || 'sk-2f7075c883d44d438f0bcb14fd8b1e0e';
     
     if (!prompt) {
@@ -73,37 +73,125 @@ serve(async (req) => {
     console.log('Calling DeepSeek API with prompt:', prompt);
     console.log('Using chart type:', selectedChartType);
 
-    // Call DeepSeek API
-    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${deepSeekApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'deepseek-chat',
-        messages: [
-          { role: 'system', content: systemMessage },
-          { role: 'user', content: userMessageWithContext }
-        ],
-        temperature: 0.7,
-        max_tokens: 500,
-      }),
-    });
+    // If streaming is requested, handle it through a streaming response
+    if (stream) {
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${deepSeekApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            { role: 'system', content: systemMessage },
+            { role: 'user', content: userMessageWithContext }
+          ],
+          temperature: 0.7,
+          max_tokens: 500,
+          stream: true,
+        }),
+      });
 
-    const data = await response.json();
-    
-    if (!response.ok) {
-      console.error('DeepSeek API error:', data);
-      throw new Error(data.error?.message || 'Error from DeepSeek API');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Error from DeepSeek API');
+      }
+
+      // Create a TransformStream to process the response stream
+      const { readable, writable } = new TransformStream();
+      
+      // Start processing the stream
+      (async () => {
+        const writer = writable.getWriter();
+        const reader = response.body?.getReader();
+        if (!reader) {
+          writer.close();
+          return;
+        }
+        
+        const encoder = new TextEncoder();
+        const decoder = new TextDecoder();
+        
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            // Decode the chunk
+            const chunk = decoder.decode(value, { stream: true });
+            
+            // Process the chunk (split by lines and parse each as JSON)
+            const lines = chunk.split('\n').filter(line => line.trim() !== '');
+            
+            for (const line of lines) {
+              // Remove the "data: " prefix and handle special cases
+              const cleanedLine = line.replace(/^data: /, '').trim();
+              
+              if (cleanedLine === '[DONE]') continue;
+              
+              try {
+                const parsed = JSON.parse(cleanedLine);
+                if (parsed.choices && parsed.choices[0]?.delta?.content) {
+                  const content = parsed.choices[0].delta.content;
+                  // Forward the content as a JSON object
+                  await writer.write(
+                    encoder.encode(JSON.stringify({ chunk: content }) + '\n')
+                  );
+                }
+              } catch (e) {
+                console.error('Error parsing streaming response chunk:', e);
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Error processing stream:', error);
+        } finally {
+          writer.close();
+        }
+      })();
+      
+      return new Response(readable, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      });
+    } else {
+      // Non-streaming response (original implementation)
+      const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${deepSeekApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'deepseek-chat',
+          messages: [
+            { role: 'system', content: systemMessage },
+            { role: 'user', content: userMessageWithContext }
+          ],
+          temperature: 0.7,
+          max_tokens: 500,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        console.error('DeepSeek API error:', data);
+        throw new Error(data.error?.message || 'Error from DeepSeek API');
+      }
+
+      const aiResponse = data.choices[0].message.content;
+      console.log('Successfully received response from DeepSeek');
+
+      return new Response(JSON.stringify({ response: aiResponse }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
-
-    const aiResponse = data.choices[0].message.content;
-    console.log('Successfully received response from DeepSeek');
-
-    return new Response(JSON.stringify({ response: aiResponse }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
   } catch (error) {
     console.error('Error in chat-ai function:', error);
     return new Response(JSON.stringify({ error: error.message }), {
