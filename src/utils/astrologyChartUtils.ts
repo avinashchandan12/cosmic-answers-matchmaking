@@ -25,26 +25,29 @@ export const fetchBirthChart = async (
   birthDate: string,
   birthTime: string,
   birthPlaceLat: number | null,
-  birthPlaceLng: number | null
+  birthPlaceLng: number | null,
+  forceRefresh: boolean = false
 ): Promise<{ data: any; error: string | null; debugInfo?: any }> => {
   try {
-    // Check if chart is already saved in database
-    const { data: savedCharts, error: fetchError } = await supabase
-      .from('saved_charts')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('chart_type', 'birth_chart')
-      .order('created_at', { ascending: false })
-      .limit(1);
-    
-    if (fetchError) {
-      console.error('Error fetching saved chart:', fetchError);
-      return { data: null, error: fetchError.message };
-    }
-    
-    if (savedCharts && savedCharts.length > 0) {
-      console.log('Using saved chart data');
-      return { data: savedCharts[0].chart_data, error: null };
+    // Check if chart is already saved in database (if not forcing refresh)
+    if (!forceRefresh) {
+      const { data: savedCharts, error: fetchError } = await supabase
+        .from('saved_charts')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('chart_type', 'birth_chart')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      
+      if (fetchError) {
+        console.error('Error fetching saved chart:', fetchError);
+        return { data: null, error: fetchError.message };
+      }
+      
+      if (savedCharts && savedCharts.length > 0) {
+        console.log('Using saved chart data');
+        return { data: savedCharts[0].chart_data, error: null };
+      }
     }
     
     // Create the request data

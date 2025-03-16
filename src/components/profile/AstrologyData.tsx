@@ -34,27 +34,74 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
 }) => {
   const { user } = useAuth();
   const [chartData, setChartData] = useState<ChartData | null>(null);
-  const [dashaData, setDashaData] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [debugInfo, setDebugInfo] = useState<any>(null);
   const [dataLoaded, setDataLoaded] = useState(false);
   
   useEffect(() => {
-    // Only fetch data once when component mounts or when shouldRefresh is true
-    if ((birthDate && birthTime && birthPlaceLat && birthPlaceLng && user && !dataLoaded) || shouldRefresh) {
-      console.log("Fetching astrological data...", { shouldRefresh, dataLoaded });
-      fetchChartData();
+    // Check if we have the required data to fetch chart
+    if (birthDate && birthTime && birthPlaceLat && birthPlaceLng && user) {
+      // Only fetch data under these conditions:
+      // 1. Data has not been loaded yet
+      // 2. shouldRefresh is true (indicating profile was updated)
+      if ((!dataLoaded || shouldRefresh) && !loading) {
+        console.log("Fetching astrological data...", { shouldRefresh, dataLoaded });
+        checkExistingChartData();
+      }
     }
   }, [birthDate, birthTime, birthPlaceLat, birthPlaceLng, user, shouldRefresh]);
   
+  // First check if chart data already exists in the database
+  const checkExistingChartData = async () => {
+    if (!user) return;
+    
+    try {
+      setLoading(true);
+      
+      // Check if chart data already exists in database
+      const { data: savedCharts, error: fetchError } = await supabase
+        .from('saved_charts')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('chart_type', 'birth_chart')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      
+      if (fetchError) {
+        console.error('Error checking saved charts:', fetchError);
+        fetchChartData(); // Fallback to fetching
+        return;
+      }
+      
+      if (savedCharts && savedCharts.length > 0 && !shouldRefresh) {
+        // We already have data and don't need to refresh
+        console.log('Using existing chart data from database');
+        const processedData = processChartData(savedCharts[0].chart_data);
+        setChartData(processedData);
+        setDataLoaded(true);
+        setLoading(false);
+        if (onDataFetched) {
+          onDataFetched();
+        }
+      } else {
+        // No data found or refresh requested, need to fetch
+        fetchChartData();
+      }
+      
+    } catch (error) {
+      console.error('Error checking for existing chart data:', error);
+      fetchChartData(); // Fallback to fetching
+    }
+  };
+  
   const fetchChartData = async () => {
     if (!birthDate || !birthTime || birthPlaceLat === undefined || birthPlaceLng === undefined || !user) {
+      setLoading(false);
       return;
     }
     
     try {
-      setLoading(true);
       setError(null);
       setDebugInfo(null);
       
@@ -106,7 +153,6 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
           console.error('Error fetching dasha data:', dashaResult.error);
         } else {
           console.log("Dasha data fetched successfully");
-          setDashaData(dashaResult.data);
           
           // Step 3: Save the dasha data to Supabase
           await supabase
@@ -167,6 +213,8 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
         
       } catch (dashaError: any) {
         console.error('Error in dasha calculation:', dashaError);
+      } finally {
+        setLoading(false);
       }
       
     } catch (error: any) {
@@ -177,7 +225,6 @@ const AstrologyData: React.FC<AstrologyDataProps> = ({
         description: "Unable to calculate your astrological chart. Please try again later.",
         variant: "destructive"
       });
-    } finally {
       setLoading(false);
     }
   };
